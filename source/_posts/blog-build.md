@@ -73,7 +73,13 @@ hexo server
 
 在浏览器中访问：<http://localhost:4000/>，即可查看博客。
 
-### Push 代码至 Github
+### 更换博客主题
+
+如果对默认主题不满意，可以选择自己喜欢的主题更换。主题可在<https://hexo.io/themes/>中查看，或者在 Github 中搜索 Hexo Themes。
+
+这里选择 [Fluid](https://github.com/fluid-dev/hexo-theme-fluid)
+
+### 托管代码至 Github
 
 注册好 Github 账号后，新建一个空仓库，命名就行，其他全默认。
 
@@ -94,6 +100,6 @@ Push 时，你可能需要输入密码，如需要免密，可自行配置 GitHu
 
 ### 部署服务至 [Zeabur](https://zeabur.com/) 平台
 
-注册账号后，新建项目，选择服务器，选择服务，点击部署即可。
+注册账号后，新建项目，选择服务器地区，添加服务选择 Github，选择自己的博客仓库即可（如果没有，点击配置 Github）。
 
-生成域名后访问即可。
+部署完成后，在`网络-公开`中生成域名后访问即可。
