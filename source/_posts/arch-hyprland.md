@@ -1,5 +1,5 @@
 ---
-title: Archlinux+Hyprland安装配置
+title: 移动硬盘安装配置Archlinux+Hyprland
 date: 2024-09-21 14:03:45
 tags:
 ---
@@ -8,22 +8,161 @@ tags:
 
 前几天看了几个Hyprland的视频，美观程度和流畅感简直甩了KDE两条街，当时就想投奔Hyprland，只是考虑到自己从头配置加美化要花不少时间，加上不能保证Hyprland就不会出各种各样的毛病，所以一直没有转Hyprland。
 
-刚好网上有许多大牛把自己Hyprland的配置分享到GitHub上，直接免去了配置加美化的一环，正好试一试平铺式窗口管理的感觉如何。
+这几天拆机空出了一块硬盘，又淘了个硬盘和，正好组成一个移动硬盘，加上GitHub上有许多美观的Hyprland的配置，直接免去了配置加美化的一环，正好试一试平铺式窗口管理的感觉如何。
 
-笔记本配置：
+配置：
 
 - Lenovo Xiaoxin pro 14
 - CPU AMD Ryzen 7 7840HS with Radeon 780M Graps
+- 1TB RC20固态硬盘+硬盘盒
 
 ## Archlinux+Hyprland安装
 
 ### Archlinux安装
 
-Archlinux安装就不赘述了，我参考的是[archlinux 简明指南](https://arch.icekylin.online/)和官方的[Archlinux Installation guide](https://wiki.archlinux.org/title/Installation_guide)。
+我参考的是[archlinux 简明指南](https://arch.icekylin.online/)和官方的[Archlinux Installation guide](https://wiki.archlinux.org/title/Installation_guide)，[Install Arch Linux on a removable medium](https://wiki.archlinux.org/title/Install_Arch_Linux_on_a_removable_medium)，[Install Arch Linux from existing Linux](https://wiki.archlinux.org/title/Install_Arch_Linux_from_existing_Linux)，以及[GRUB](https://wiki.archlinux.org/title/GRUB)。
+
+#### 安装前准备
+
+因为是在已有的Archlinux上安装Archlinux，因此事先不需要配置网络、时钟、镜像源那些东西。
+
+首先安装[arch-install-scripts](https://archlinux.org/packages/?name=arch-install-scripts)这个包，里面是一些安装Archlinux要用到的命令，以及[dosfstools](https://archlinux.org/packages/core/x86_64/dosfstools/)，包含格式化分区的命令。
+
+连上硬盘，切换到Root。
+
+#### 分区格式化
+
+之后用`cfdisk`分区，这里这里按官方的提示，增加了一个128G大小的NTFS分区，专门用于跨平台存储数据，并作为第一个分区，其它按安装指南即可。
+
+这里按简明指南使用Btrfs文件系统，因此`/home/`和`/`都在一个分区上。
+
+![分区示例](/home/atmos//Pictures/Screenshots/241002_22h14m48s_screenshot.png "分区示例")
+
+格式化分区，注意将各个分区名替换成你对应的分区：
+
+```bash
+mkfs.fat -F 32 /dev/sda2 # 格式化EFI分区，双系统注意不要运行这步
+mkswap /dev/sda3 # 格式化Swap分区
+mkfs.btrfs -L myArch /dev/sda4 # 格式化Btrfs分区
+mount -t btrfs -o compress=zstd /dev/sda4 /mnt # 挂载Btrfs分区
+btrfs subvolume create /mnt/@ # 创建 / 目录子卷
+btrfs subvolume create /mnt/@home # 创建 /home 目录子卷
+umount /mnt
+```
+
+#### 安装系统
+
+首先挂载各个分区：
+
+```bash
+mount -t btrfs -o subvol=/@,compress=zstd /dev/sda4 /mnt # 挂载 / 目录
+mkdir /mnt/home # 创建 /home 目录
+mount -t btrfs -o subvol=/@home,compress=zstd /dev/sda4 /mnt/home # 挂载 /home 目录
+mount --mkdir /dev/sda2 /mnt/boot # 挂载 /boot 目录
+swapon /dev/sda3 # 挂载交换分区
+```
+
+因为我用于安装Archlinux的系统本身启用了swap分区，因此还要把这个系统的swap分区取消挂载，否则生成fstab文件时会把这个分区也加进去。
+
+```bash
+swapoff /dev/nvme0n1p6
+```
+
+安装系统，因为是从已有的Archlinux上安装Archlinux，因此加上`-c`参数，直接使用本地的缓存：
+
+```bash
+pacstrap -c /mnt base base-devel linux linux-firmware btrfs-progs
+# 如果使用btrfs文件系统，额外安装一个btrfs-progs包
+pacstrap -c /mnt amd-ucode intel-ucode # 移动硬盘跨平台，因此都AMD和intel的微码都装上
+pacstrap -c /mnt sof-firmware networkmanager ntfs-3g dosfstools # 板载声卡驱动，网络，挂载NTFS分区
+pacstrap -c /mnt neovim sudo zsh zsh-completions man-db man-pages texinfo
+```
+
+生成fstab文件：
+
+```bash
+genfstab -U /mnt >> /mnt/etc/fstab
+cat /mnt/etc/fstab # 查看fstab文件
+```
+
+#### 系统设置
+
+这里建议按[archlinux 简明指南](https://arch.icekylin.online/)，一步一步来：
+
+```bash
+arch-chroot /mnt
+nvim /etc/hostname # 添加主机名
+```
+
+设置hosts：
+
+```bash
+nvim /etc/hosts
+```
+
+加入：
+
+```
+127.0.0.1   localhost
+::1         localhost
+127.0.1.1   myArch.localdomain myArch
+```
+
+```bash
+ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime # 设置时区
+hwclock --systohc # 同步硬件时间
+nvim /etc/locale.genfstab # 去掉注释 en_US.UTF-8 UTF-8 以及 zh_CN.UTF-8 UTF-8
+locale-gen
+echo 'LANG=en_US.UTF-8' >> /etc/locale.conf # 设置系统语言
+passwd root # 设置root密码
+```
+
+按[Install Arch Linux on a removable medium](https://wiki.archlinux.org/title/Install_Arch_Linux_on_a_removable_medium)的要求，需要修改`/etc/mkinitcpio.conf`文件：
+
+在`HOOKS`中将`block`和`keyboard`移到`autodetect`之前：
+
+```
+HOOKS=(base udev keyboard block autodetect microcode modconf kms keymap consolefont filesystems fsck)
+```
+
+然后运行：
+
+```bash
+mkinitcpio -P
+```
+
+#### 启动引导
+
+首先安装grub:
+
+```bash
+pacman -S grub efibootmgr os-prober # 前两个是GRUB必需的，os-prober用于引导windows系统
+```
+
+按[Install Arch Linux on a removable medium](https://wiki.archlinux.org/title/Install_Arch_Linux_on_a_removable_medium)的要求，
+运行以下命令来安装为BIOS和UEFI分别安装GRUB，并加上`--removable`以保证将硬盘移至另一台计算机时能够从硬盘启动：
+
+```bash
+grub-install --target=i386-pc /dev/sda2 --recheck # 未知原因，这个命令运行失败，可能是要另建一个BIOS分区
+grub-install --target=x86_64-efi --efi-directory=/boot --removable --recheck
+```
+
+接下来修改`/etc/default/grub`文件，并生成配置：
+
+```bash
+nvim /etc/default/grub # loglevel=5 nowatchdog 取消注释最后一行启用os-prober
+grub-mkconfig -o /boot/grub/grub.cfg
+```
+
+完成安装，退出系统：
+
+```bash
+exit # 退回安装环境
+umount -R /mnt # 卸载新分区
+reboot # 重启
+```
 
 ### Hyprland安装
-
-此时你应该以及走完官方的安装指南没有遗漏，archlinux简明教程也到了`进阶安装`中的`桌面环境与常用应用安装`，已经有了一个无桌面窗口环境纯命令行的Archlinux系统了。
 
 我选择的Hyprland的配置是[HYDE](https://github.com/prasanthrangan/hyprdots)，这是GitHub上目前Star数最多的Hyprland配置。
 
