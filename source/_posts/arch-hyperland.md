@@ -144,7 +144,7 @@ sudo pacman -S fcitx5-rime # 安装rime输入法
 yay -S rime-ice # 雾凇拼音输入方案
 ```
 
-环境变量`~/.config/environment.d/im.conf`：
+环境变量`~/.config/environment.d/im.conf`(详细信息见[fcitx5 in wayland](https://fcitx-im.org/wiki/Using_Fcitx_5_on_Wayland#Chromium_.2F_Electron))：
 
 ```
 XMODIFIERS=@im=fcitx
@@ -242,9 +242,19 @@ hyprctl monitors
 monitor = ,2880x1800@120.00,auto,auto
 ```
 
-> *注意*：如果你使用的电脑和笔者一样是`联想小新14Pro 2023`，且搭载的CPU是`AMD7840HS`，那么你会发现运行`hyprctl monitor`的结果中没有刷新率为120Hz的显示器设置，然而在Windows中可以正常应用120HZ，并且在Hyprland中强制使用120Hz会发现屏幕闪烁、变色、模糊。
+> _注意_：如果你使用的电脑和笔者一样是`联想小新14Pro 2023`，且搭载的CPU是`AMD7840HS`，那么你会发现运行`hyprctl monitor`的结果中没有刷新率为120Hz的显示器设置，然而在Windows中可以正常应用120HZ，并且在Hyprland中强制使用120Hz会发现屏幕闪烁、变色、模糊。
 >
 > 这是因为小新主板提供的EDID信息（主板提供给操作系统显示器的信息，包括可使用的分辨率和刷新率）的校验和错误，需要将错误的EDID反编译、更正再编译后加载进内核，Bug探讨和详细的解决方法见<https://bbs.archlinux.org/viewtopic.php?id=289701>。
+
+### wayland-electron设置
+
+将需要修改的`desktop`文件从`/usr/share/applications/`复制到`~/.local/share/applications/`，再加上：
+
+```
+--enable-features=WebRTCPipeWireCapturer --ozone-platform-hint=auto --enable-wayland-ime
+```
+
+参数意义见<https://wiki.archlinux.org/title/Wayland#Electron>
 
 ## HYDE配置
 
