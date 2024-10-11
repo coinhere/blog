@@ -91,7 +91,7 @@ cat /mnt/etc/fstab # 查看fstab文件
 
 ```bash
 arch-chroot /mnt
-nvim /etc/hostname # 添加主机名
+nvim /etc/hostname # 添加主机名，这里是myArch
 ```
 
 设置hosts：
@@ -100,7 +100,7 @@ nvim /etc/hostname # 添加主机名
 nvim /etc/hosts
 ```
 
-加入：
+加入，注意要和主机名一致：
 
 ```
 127.0.0.1   localhost
@@ -164,7 +164,7 @@ reboot # 重启
 
 ### Hyprland安装
 
-我选择的Hyprland的配置是[HYDE](https://github.com/prasanthrangan/hyprdots)，这是GitHub上目前Star数最多的Hyprland配置。
+推荐两个Hyprland的配置，一个是[prasanthrangan's HYDE](https://github.com/prasanthrangan/hyprdots)，简洁、干净、美观，包含多个不同风格的主题和基本的一些应用，适合于想要在一个美观的主题上搭建自己的Hyprland的用户，这也是GitHub上目前Star数最多的Hyprland配置。
 
 要安装HYDE，执行以下命令，安装过程中会安装许多包，为此你可能需要魔法：
 
@@ -173,6 +173,14 @@ pacman -Sy git
 git clone --depth 1 https://github.com/prasanthrangan/hyprdots ~/HyDE
 cd ~/HyDE/Scripts
 ./install.sh
+```
+
+另一个是[end_4's Hyprland dotfiles](https://github.com/end-4/dots-hyprland)，作者表示:i hate minimalism so... ，所以这是一个大而全的桌面环境，其中集成了AI助手，可以通过侧栏访问ChatGPT和Google Gemini，色彩风格是material。
+
+要安装HYDE，执行以下命令，安装过程中会安装许多包，为此你可能需要魔法：
+
+```bash
+bash <(curl -s "https://end-4.github.io/dots-hyprland-wiki/setup.sh")
 ```
 
 此后便可按照自己的喜好安装其它程序以及更改配置了。
