@@ -181,7 +181,7 @@ reboot # 重启
 systemctl enable --now NetworkManager
 # 如果使用WiFi，运行以下命令
 nmcli dev wifi list
-nmcli dev wifi connect <wifi SSID> password <password>
+nmcli dev wifi connect "wifi SSID" password "password"
 ```
 
 #### 准备普通用户
@@ -248,11 +248,14 @@ sudo pacman -S yay # yay 命令可以让用户安装 AUR 中的软件（yay 在 
 sudo pacman -S timeshift
 ```
 
-修改`/etc/timeshift/timeshift.json`，将下面两行修改为true：
+修改`/etc/timeshift/timeshift.json`，修改的行如下，运行`lsblk`查看UUID：
 
 ```
+  "backup_device_uuid" : "21b2199f-38e4-4bf1-ae1e-0c9d4d0431f8", # 修改为自己备份分区的UUID
+  "do_first_run" : "false",
   "btrfs_mode" : "true",
-  "include_btrfs_home" : "true",
+  "include_btrfs_home" : "true", # 是否备份/home
+  "include_btrfs_home_for_restore" : "true", # 是否恢复/home
 ```
 
 安装Hyprland之后，如果遇到timeshift GUI 无法启动的情况，需要安装`xorg-xhost`，原因见[arch wiki](https://wiki.archlinux.org/title/Timeshift#Timeshift_GUI_not_launching_on_Wayland)
@@ -271,6 +274,8 @@ timeshift --create --comments "after update" --tags D # 创建快照，标签为
 
 ### 安装显卡驱动
 
+**这一步可以跳过，因为安装HyDE的时候，会自动检测显卡并安装驱动及设定相关参数，包括NVIDIA**
+
 没有什么说的比[简明教程](https://arch.icekylin.online/guide/rookie/graphic-driver)，和Arch wiki说的更清楚的了。
 
 因为是移动硬盘，且主力机是40系显卡配Intel核显以及AMD核显笔记本，我安装的是：
@@ -278,7 +283,7 @@ timeshift --create --comments "after update" --tags D # 创建快照，标签为
 ```
 sudo pacman -S mesa lib32-mesa vulkan-intel lib32-vulkan-intel # Intel 核芯显卡
 sudo pacman -S mesa lib32-mesa xf86-video-amdgpu vulkan-radeon lib32-vulkan-radeon #AMD 集成显卡
-sudo pacman -S nvidia-open nvidia-settings lib32-nvidia-utils # NVIDIA 独立显卡
+sudo pacman -S nvidia nvidia-settings lib32-nvidia-utils # NVIDIA 独立显卡
 ```
 
 Arch Wiki 提示：
@@ -309,6 +314,8 @@ __GLX_VENDOR_LIBRARY_NAME=nvidia
 
 推荐两个Hyprland的配置，一个是[prasanthrangan's HYDE](https://github.com/prasanthrangan/hyprdots)，简洁、干净、美观，包含多个不同风格的主题和基本的一些应用，适合于想要在一个美观的主题上搭建自己的Hyprland的用户，这也是GitHub上目前Star数最多的Hyprland配置。
 
+### HYDE
+
 要安装HYDE，执行以下命令，安装过程中会安装许多包，为此你可能需要魔法：
 
 ```bash
@@ -317,6 +324,29 @@ git clone --depth 1 https://github.com/prasanthrangan/hyprdots ~/HyDE
 cd ~/HyDE/Scripts
 ./install.sh
 ```
+
+可以添加其他想要安装的软件到`Scripts/custom_apps.lst`：
+
+```bash
+./install.sh custom_apps.lst
+```
+
+更新则运行：
+
+```bash
+cd ~/HyDE/Scripts
+git pull
+./install.sh -r
+```
+
+更新前修改`Scripts/restore_cfg.lst`来避免之前的配置被覆盖，我修改的是：
+
+```
+N|Y|${HOME}/.config/kitty|kitty.conf|kitty
+N|Y|${HOME}/.config/waybar|config.ctl|waybar
+```
+
+### JaKooLit
 
 另一个是[JaKooLit's Hyprland Dotfiles](https://github.com/JaKooLit/Hyprland-Dots)，不同之处是有更丰富的功能，例如下拉式终端、工作区概览，该配置为各种系统都提供率安装脚本，这里使用的是[archlinux 的安装脚本](https://github.com/JaKooLit/Arch-Hyprland)。
 
@@ -514,6 +544,10 @@ Release中下载MapleMono-NF-CN.zip，解压并放在`~/.local/share/fonts/`中�
 xdg-settings set default-web-browser firefox.desktop
 ```
 
+或者：
+
+> Open the browser >> navigate chrome://flags/ >> search for Preferred Ozone platform >> Select wayland
+
 ### nvim
 
 直接使用[lazyvim](http://www.lazyvim.org/installation)的配置。
@@ -524,11 +558,20 @@ rm -rf ~/.config/nvim/.git
 nvim
 ```
 
-### catppuccin主题美化
+### vscode
+
+#### catppuccin主题美化
 
 - [vscode](https://github.com/catppuccin/vscode)
 - [vscode-icons](https://github.com/catppuccin/vscode-icons)
-- [btop](https://github.com/catppuccin/btop)
+
+#### vscode无法输入中文
+
+在`~/.config/code-flags.conf`中加入：
+
+```
+--enable-wayland-ime
+```
 
 ### firefox插件
 
@@ -540,7 +583,7 @@ onetab
 将需要修改的`desktop`文件从`/usr/share/applications/`复制到`~/.local/share/applications/`，再加上：
 
 ```
---enable-features=WebRTCPipeWireCapturer --ozone-platform-hint=auto --enable-wayland-ime
+--enable-features=UseOzonePlatform --enable-features=WebRTCPipeWireCapturer --ozone-platform-hint=wayland --enable-wayland-ime
 ```
 
 参数意义见<https://wiki.archlinux.org/title/Wayland#Electron>
@@ -571,7 +614,7 @@ hyprctl monitors
 monitor = ,2880x1800@120.00,auto,auto
 ```
 
-> _注意_：如果你使用的电脑和笔者一样是`联想小新14Pro 2023`，且搭载的CPU是`AMD7840HS`，那么你会发现运行`hyprctl monitor`的结果中没有刷新率为120Hz的显示器设置，然而在Windows中可以正常应用120HZ，并且在Hyprland中强制使用120Hz会发现屏幕闪烁、变色、模糊。
+> *注意*：如果你使用的电脑和笔者一样是`联想小新14Pro 2023`，且搭载的CPU是`AMD7840HS`，那么你会发现运行`hyprctl monitor`的结果中没有刷新率为120Hz的显示器设置，然而在Windows中可以正常应用120HZ，并且在Hyprland中强制使用120Hz会发现屏幕闪烁、变色、模糊。
 >
 > 这是因为小新主板提供的EDID信息（主板提供给操作系统显示器的信息，包括可使用的分辨率和刷新率）的校验和错误，需要将错误的EDID反编译、更正再编译后加载进内核，Bug探讨和详细的解决方法见<https://bbs.archlinux.org/viewtopic.php?id=289701>。
 >
