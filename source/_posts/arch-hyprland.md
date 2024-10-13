@@ -1,7 +1,10 @@
 ---
 title: 移动硬盘安装配置Archlinux+Hyprland
-date: 2024-09-21 14:03:45
-tags: Archlinux Hyprland 移动硬盘
+date: 2024-10-13 14:03:45
+tags: 
+ - Archlinux
+ - Hyprland
+ - 移动硬盘
 ---
 
 之前一直使用Archlinux+KDE，也花费了一定时间来美化，自觉效果还不错，也用了较长一段时间，但KDE在使用中时常出现些奇奇怪怪的问题，十分折磨。
@@ -30,7 +33,7 @@ tags: Archlinux Hyprland 移动硬盘
 
 ### 分区格式化
 
-之后用`cfdisk`分区，这里这里按官方的提示，增加了一个128G大小的NTFS分区，专门用于跨平台存储数据，并作为第一个分区，其它按安装指南即可。
+之后用`cfdisk`分区，这里这里按官方的提示，增加了一个128G大小的windows的NTFS分区，专门用于跨平台存储数据，并作为第一个分区，其它按安装指南即可。
 
 这里按简明指南使用Btrfs文件系统，因此`/home/`和`/`都在一个分区上。
 
@@ -64,6 +67,7 @@ swapon /dev/sda3 # 挂载交换分区
 
 ```bash
 swapoff /dev/nvme0n1p6 # 取消原系统swap分区
+mount --mkdir -t ntfs3 /dev/sda1 /mnt/media/windows # 挂载windows数据分区，用于生成fstab后自动挂载
 df -h # 查看分区结果
 free -h # 查看swap
 ```
@@ -75,14 +79,14 @@ pacstrap -c /mnt base base-devel linux linux-firmware btrfs-progs
 # 如果使用btrfs文件系统，额外安装一个btrfs-progs包
 pacstrap -c /mnt amd-ucode intel-ucode # 移动硬盘跨平台，因此都AMD和intel的微码都装上
 pacstrap -c /mnt sof-firmware networkmanager ntfs-3g dosfstools # 板载声卡驱动，网络，挂载NTFS分区
-pacstrap -c /mnt neovim sudo fish zsh zsh-completions man-db man-pages texinfo
+pacstrap -c /mnt neovim sudo fish man-db man-pages texinfo
 ```
 
-生成fstab文件：
+生成并修改fstab文件，移除btrfs分区中两个字卷的subvolid参数，避免Timeshift恢复 Btrfs 快照时，可能出现由于子卷 ID 变更导致无法挂载目录而无法进入系统。
 
 ```bash
-genfstab -U /mnt >> /mnt/etc/fstab
-cat /mnt/etc/fstab # 查看fstab文件
+genfstab -U /mnt >> /mnt/etc/fstab # 生成fstab文件
+nvim /mnt/etc/fstab # 修改fstab文件
 ```
 
 ### 系统设置
@@ -119,6 +123,10 @@ passwd root # 设置root密码
 ```
 
 按[Install Arch Linux on a removable medium](https://wiki.archlinux.org/title/Install_Arch_Linux_on_a_removable_medium)的要求，需要修改`/etc/mkinitcpio.conf`文件：
+
+```bash
+nvim /etc/mkinitcpio.conf
+```
 
 在`HOOKS`中将`block`和`keyboard`移到`autodetect`之前：
 
@@ -174,8 +182,6 @@ systemctl enable --now NetworkManager
 # 如果使用WiFi，运行以下命令
 nmcli dev wifi list
 nmcli dev wifi connect <wifi SSID> password <password>
-
-sudo systemctl enable --now bluetooth # 启用蓝牙
 ```
 
 #### 准备普通用户
@@ -197,6 +203,7 @@ export EDITOR='nvim'
 更改默认shell:
 
 ```bash
+su myusername # 切换用户
 chsh -l # 查看安装了哪些 Shell
 chsh -s /usr/bin/zsh # 修改当前账户的默认 Shell
 ```
@@ -227,12 +234,10 @@ Server = https://repo.huaweicloud.com/archlinuxcn/$arch # 华为开源镜像站
 ```
 pacman -Syyu
 sudo pacman -S sof-firmware alsa-firmware alsa-ucm-conf # 声音固件
-sudo pacman -S ntfs-3g # 使系统可以识别 NTFS 格式的硬盘
 sudo pacman -S adobe-source-han-serif-cn-fonts wqy-zenhei # 安装几个开源中文字体。一般装上文泉驿就能解决大多 wine 应用中文方块的问题
 sudo pacman -S noto-fonts noto-fonts-cjk noto-fonts-emoji noto-fonts-extra # 安装谷歌开源字体及表情
 sudo pacman -S archlinuxcn-keyring # cn 源中的签名（archlinuxcn-keyring 在 archlinuxcn）
 sudo pacman -S yay # yay 命令可以让用户安装 AUR 中的软件（yay 在 archlinuxcn）
-
 ```
 
 ### 设置`timeshift`备份
@@ -241,6 +246,13 @@ sudo pacman -S yay # yay 命令可以让用户安装 AUR 中的软件（yay 在 
 
 ```bash
 sudo pacman -S timeshift
+```
+
+修改`/etc/timeshift/timeshift.json`，将下面两行修改为true：
+
+```
+  "btrfs_mode" : "true",
+  "include_btrfs_home" : "true",
 ```
 
 安装Hyprland之后，如果遇到timeshift GUI 无法启动的情况，需要安装`xorg-xhost`，原因见[arch wiki](https://wiki.archlinux.org/title/Timeshift#Timeshift_GUI_not_launching_on_Wayland)
@@ -281,7 +293,7 @@ HOOKS=(base udev keyboard block autodetect microcode modconf keymap consolefont 
 然后运行：
 
 ```bash
-mkinitcpio -P
+sudo mkinitcpio -P
 ```
 
 此外Arch Wiki提到，Wayland + Nvidia 还需要设置[DRM 内核级显示模式设置](https://wiki.archlinuxcn.org/wiki/Wayland#%E7%B3%BB%E7%BB%9F%E9%9C%80%E6%B1%82)，不然可能会导致黑屏：
@@ -318,8 +330,6 @@ chmod +x install.sh
 ```
 
 此后便可按照自己的喜好安装其它程序以及更改配置了。
-
-详细见[Hyprland Wiki](https://wiki.hyprland.org/Getting-Started/Preconfigured-setups/#prasanthrangan)
 
 ## Archlinux配置
 
@@ -417,20 +427,39 @@ sudo -E timeshift-gtk # -E 表示保留当前用户环境
 
 ### 输入法安装配置
 
-安装输入法相关包：
+#### 安装输入法相关包
 
 ```bash
 sudo pacman -S fcitx5-im # 输入法基础包组
 sudo pacman -S fcitx5-chinese-addons # 官方中文输入引擎
 sudo pacman -S fcitx5-configtool # 输入法设置工具
 sudo pacman -S fcitx5-rime # 安装rime输入法
-yay -S rime-ice # 雾凇拼音输入方案
 ```
 
-添加进systemd 用户环境变量`~/.config/environment.d/im.conf`(详细信息见[fcitx5 in wayland](https://fcitx-im.org/wiki/Using_Fcitx_5_on_Wayland#Chromium_.2F_Electron))：
+#### 添加环境变量
+
+创建`~/.config/environment.d/im.conf`，并添加(详细信息见[fcitx5 in wayland](https://fcitx-im.org/wiki/Using_Fcitx_5_on_Wayland#Chromium_.2F_Electron))：
 
 ```
 XMODIFIERS=@im=fcitx
+QT_IM_MODULE=fcitx
+```
+
+#### 启动fcitx5，安装rime输入法
+
+```bash
+fcitx5 -d # 启动fcitx5
+```
+
+在终端中运行`fcitx5-configtool`(或者右键任务栏的输入法图标，点击configure)，打开设置界面，取消勾选`Only Show Current Language`，在上方搜索Rime并将其移动到左侧，点击`Apply`并退出即可。
+
+此时，使用`Ctrl`+`Space`即可切换至`Rime`并输入中文。
+
+#### 使用雾凇拼音词库
+
+```bash
+yay -S rime-ice # 雾凇拼音输入方案
+
 ```
 
 创建`~/.local/share/fcitx5/rime/default.custom.yaml`并添加：
@@ -446,23 +475,26 @@ patch:
       - schema: double_pinyin_flypy
 ```
 
-在终端中运行`fcitx5-configtool`，打开设置界面，取消勾选`Only Show Current Language`，搜索Rime并移动到左侧，应用并退出即可。
-
-之后启动fcitx5，`Ctrl+Space`即可输入中文。
-
-```bash
-fcitx5 -d # 启动fcitx5
-```
+之后重新启动fcitx5(右键图标点击`restart`)，`Ctrl+Space`即可输入中文。
 
 记得设置自动启动，在`~/.config/hypr/hyprland.conf`:
 
 ```
-exec-once = fcitx5 -d
+exec-once = fcitx5 --replace -d
 ```
 
-### 输入法美化
+#### 输入法美化
 
 这里使用fcitx5的[FluentDark](https://github.com/Reverier-Xu/Fluent-fcitx5)皮肤，透明黑色。
+
+```bash
+# Dark theme
+yay -S fcitx5-skin-fluentdark-git
+# Light theme
+yay -S fcitx5-skin-fluentlight-git
+```
+
+进入fcitx5-configtool，在`Addons`-`UI`-`Classic User Interface`中，在`Theme`和`Dark Theme`中下拉选中自己想要的主题即可。
 
 ### kitty
 
@@ -514,6 +546,8 @@ onetab
 参数意义见<https://wiki.archlinux.org/title/Wayland#Electron>
 
 ## Hyprland配置
+
+详细见[Hyprland Wiki](https://wiki.hyprland.org/Getting-Started/Preconfigured-setups/#prasanthrangan)
 
 ### 调整屏幕刷新率
 
