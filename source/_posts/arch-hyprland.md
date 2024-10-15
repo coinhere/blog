@@ -175,7 +175,7 @@ reboot # 重启
 
 此处均参照[archlinux 简明指南](https://arch.icekylin.online/)，仅记录执行过的命令。
 
-#### 启用NetworkManager及蓝牙
+#### 连接网络
 
 ```bash
 systemctl enable --now NetworkManager
@@ -363,6 +363,16 @@ chmod +x install.sh
 
 ## Archlinux配置
 
+### 服务启用
+
+Hyprland没有启用蓝牙服务和Timeshift自动备份服务，因此手动启动：
+
+```bash
+sudo pacman -S bluez bluez-utils # HYDE 会自动安装这两个包
+sudo systemctl enable --now bluetooth # 启用蓝牙服务
+sudo systemctl enable --now cronie # 启用Timeshift自动备份
+```
+
 ### 改键
 
 需求：
@@ -397,15 +407,17 @@ sudo keyd monitor
 
 [main]
 
-# Maps capslock to escape when pressed and control when held.
+# Maps capslock to escape and a self-defined key -- capslock_layer
 capslock = overload(capslock_layer, esc)
 
 # Remaps the escape key to capslock
 esc = capslock
 
+# Swap rightalt and rightcontrol
 rightalt = rightcontrol
 rightctrol = rightalt
 
+# When capslock_layer is pressed
 [capslock_layer]
 f = right
 b = left
@@ -485,6 +497,8 @@ fcitx5 -d # 启动fcitx5
 
 此时，使用`Ctrl`+`Space`即可切换至`Rime`并输入中文。
 
+第一次使用时，会自动生成rime配置文件，在`~/.local/share/fcitx5/rime`中。
+
 #### 使用雾凇拼音词库
 
 ```bash
@@ -517,6 +531,8 @@ exec-once = fcitx5 --replace -d
 
 这里使用fcitx5的[FluentDark](https://github.com/Reverier-Xu/Fluent-fcitx5)皮肤，透明黑色。
 
+安装：
+
 ```bash
 # Dark theme
 yay -S fcitx5-skin-fluentdark-git
@@ -524,9 +540,15 @@ yay -S fcitx5-skin-fluentdark-git
 yay -S fcitx5-skin-fluentlight-git
 ```
 
-进入fcitx5-configtool，在`Addons`-`UI`-`Classic User Interface`中，在`Theme`和`Dark Theme`中下拉选中自己想要的主题即可。
+之后进入fcitx5-configtool，在`Addons`-`UI`-`Classic User Interface`中，在`Theme`和`Dark Theme`中下拉选中自己想要的主题即可。
 
-### kitty
+### 字体
+
+#### 安装Windows字体
+
+```bash
+yay -S ttf-ms-win11-auto-zh_cn
+```
 
 #### 终端字体
 
@@ -535,6 +557,16 @@ yay -S fcitx5-skin-fluentlight-git
 Release中下载MapleMono-NF-CN.zip，解压并放在`~/.local/share/fonts/`中。
 
 在kitty配置文件`~/.config/kitty/kitty.conf`将字体修改为`Maple Mono NF CN`
+
+#### firefox字体
+
+Hyprlan默认的字体有些奇怪，这里修改字体设置。需要安装Windows字体。
+
+在`Settings`-`Fonts`-`Advanced`-`Fonts for Simplified Chinese`，设置为：
+
+{% asset_img font-settings.png 字体设置 %}
+
+### kitty
 
 #### Kitty点击链接时浏览器为`Brave`，无缩放
 
@@ -548,7 +580,7 @@ xdg-settings set default-web-browser firefox.desktop
 
 > Open the browser >> navigate chrome://flags/ >> search for Preferred Ozone platform >> Select wayland
 
-### nvim
+### neovim
 
 直接使用[lazyvim](http://www.lazyvim.org/installation)的配置。
 
@@ -556,6 +588,28 @@ xdg-settings set default-web-browser firefox.desktop
 git clone https://github.com/LazyVim/starter ~/.config/nvim
 rm -rf ~/.config/nvim/.git
 nvim
+```
+
+安装[neovide](https://neovide.dev/)(一个Neovim的图形用户界面)以获得更好的视觉及输入体验：
+
+```bash
+sudo pacman -S neovide
+```
+
+记得在`~/.config/hypr/keybindings.conf`中添加启动快捷键：
+
+```
+bind = $mainMod, N, exec, neovide # launch terminal emulator
+```
+
+neovide自动读取neovim的设置，因此neovide的设置也放在neovim中，如`~/.config/nvim/lua/config/options.lua`
+
+```lua
+-- neovide configurations
+if vim.g.neovide then
+  vim.o.guifont = "Maple Mono NF CN:h9" -- 设置neovide字体
+  vim.g.neovide_scale_factor = 1.0 -- neovide缩放与系统缩放叠加了，因此取消neovide的缩放
+end
 ```
 
 ### vscode
@@ -573,20 +627,46 @@ nvim
 --enable-wayland-ime
 ```
 
-### firefox插件
+### Firefox
+
+#### 插件
 
 onetab
 欧路词典
+
+#### 取消视频自动静音
+
+在`Settings`中搜索`Autoplay`，将`Default for all websites:`从`Block Audio`修改为`Allow Audio and Video`
 
 ### wayland-electron设置
 
 将需要修改的`desktop`文件从`/usr/share/applications/`复制到`~/.local/share/applications/`，再加上：
 
 ```
---enable-features=UseOzonePlatform --enable-features=WebRTCPipeWireCapturer --ozone-platform-hint=wayland --enable-wayland-ime
+--enable-features=WebRTCPipeWireCapturer --ozone-platform-hint=auto --enable-wayland-ime
 ```
 
 参数意义见<https://wiki.archlinux.org/title/Wayland#Electron>
+
+#### 设置Electron配置文件
+
+详细说明见<https://wiki.archlinux.org/title/Wayland#Configuration_file>
+
+如`~/.config/electron-flags.conf`：
+
+```
+--ozone-platform-hint=auto
+--enable-wayland-ime
+
+```
+
+以及`~/.config/electron13-flags.conf`：
+
+```
+--enable-features=UseOzonePlatform
+--ozone-platform=wayland
+--enable-wayland-ime
+```
 
 ## Hyprland配置
 
@@ -636,14 +716,28 @@ waybar配置文件为`~/.config/waybar/config.ctl`。
 第一个数字代表正在启用的配置。
 HYDE中`win+alt+UP`、`win+alt+DOWN`切换waybar配置。
 
-### SSDM theme
+### HyDE更新覆盖设置
 
-SSDM主题字体过小，这里是Corners主题：
-在`/usr/share/sddm/themes/Corners/theme.conf`修改：
+在`~/HyDE/Scripts/restore_cfg.lst`中，我修改的是：
+
+```
+N|Y|${HOME}/.config/kitty|kitty.conf|kitty
+N|Y|${HOME}/.config/waybar|config.ctl|waybar
+```
+
+### SDDM theme
+
+#### SDDM主题字体过小
+
+在`/usr/share/sddm/themes/<theme-name>/theme.conf`修改：
 
 ```
 GeneralFontSize="18"
 ```
+
+#### 修改SDDM背景图片
+
+在`/usr/share/sddm/themes/Candy/backgrounds/`里添加自己想要的背景，再在`/usr/share/sddm/themes/Candy/theme.conf`里修改。
 
 ### hyprland drop-down terminal
 
