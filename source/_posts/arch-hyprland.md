@@ -238,6 +238,7 @@ sudo pacman -S adobe-source-han-serif-cn-fonts wqy-zenhei # 安装几个开源�
 sudo pacman -S noto-fonts noto-fonts-cjk noto-fonts-emoji noto-fonts-extra # 安装谷歌开源字体及表情
 sudo pacman -S archlinuxcn-keyring # cn 源中的签名（archlinuxcn-keyring 在 archlinuxcn）
 sudo pacman -S yay # yay 命令可以让用户安装 AUR 中的软件（yay 在 archlinuxcn）
+yay -S ttf-ms-win11-auto-zh_cn # 微软字体
 ```
 
 ### 设置`timeshift`备份
@@ -542,13 +543,7 @@ yay -S fcitx5-skin-fluentlight-git
 
 之后进入fcitx5-configtool，在`Addons`-`UI`-`Classic User Interface`中，在`Theme`和`Dark Theme`中下拉选中自己想要的主题即可。
 
-### 字体
-
-#### 安装Windows字体
-
-```bash
-yay -S ttf-ms-win11-auto-zh_cn
-```
+### kitty
 
 #### 终端字体
 
@@ -557,16 +552,6 @@ yay -S ttf-ms-win11-auto-zh_cn
 Release中下载MapleMono-NF-CN.zip，解压并放在`~/.local/share/fonts/`中。
 
 在kitty配置文件`~/.config/kitty/kitty.conf`将字体修改为`Maple Mono NF CN`
-
-#### firefox字体
-
-Hyprlan默认的字体有些奇怪，这里修改字体设置。需要安装Windows字体。
-
-在`Settings`-`Fonts`-`Advanced`-`Fonts for Simplified Chinese`，设置为：
-
-{% asset_img font-settings.png 字体设置 %}
-
-### kitty
 
 #### Kitty点击链接时浏览器为`Brave`，无缩放
 
@@ -582,6 +567,8 @@ xdg-settings set default-web-browser firefox.desktop
 
 ### neovim
 
+#### neovim配置
+
 直接使用[lazyvim](http://www.lazyvim.org/installation)的配置。
 
 ```bash
@@ -589,6 +576,12 @@ git clone https://github.com/LazyVim/starter ~/.config/nvim
 rm -rf ~/.config/nvim/.git
 nvim
 ```
+
+安装成功后在nvim中运行`:LazyHealth`、`:Mason`、`:MasonLog`检查是否存在问题。
+
+`:LazyExtra`查看额外配置。
+
+#### neovide
 
 安装[neovide](https://neovide.dev/)(一个Neovim的图形用户界面)以获得更好的视觉及输入体验：
 
@@ -612,12 +605,32 @@ if vim.g.neovide then
 end
 ```
 
-### vscode
-
 #### catppuccin主题美化
 
-- [vscode](https://github.com/catppuccin/vscode)
-- [vscode-icons](https://github.com/catppuccin/vscode-icons)
+创建并添加`~/.config/nvim/lua/plugins/colorscheme.lua`:
+
+```
+return {
+  {
+    "folke/tokyonight.nvim",
+    opts = { style = "storm" },
+  },
+  { "rose-pine/neovim", name = "rose-pine" },
+  { "EdenEast/nightfox.nvim" },
+  { "catppuccin/nvim", opts = { term_colors = true, dim_inactive = { enabled = true } } }, # term_colors保证neovide内置terminal色彩正确
+  {
+    "LazyVim/LazyVim",
+    opts = {
+      -- colorscheme = "nordfox",
+      -- colorscheme = "rose-pine",
+      colorscheme = "catppuccin",
+    },
+  },
+}
+
+```
+
+### vscode
 
 #### vscode无法输入中文
 
@@ -627,7 +640,20 @@ end
 --enable-wayland-ime
 ```
 
+#### catppuccin主题美化
+
+- [vscode](https://github.com/catppuccin/vscode)
+- [vscode-icons](https://github.com/catppuccin/vscode-icons)
+
 ### Firefox
+
+#### firefox字体
+
+Hyprlan默认的字体有些奇怪，这里修改字体设置。需要安装Windows字体。
+
+在`Settings`-`Fonts`-`Advanced`-`Fonts for Simplified Chinese`，设置为：
+
+{% asset_img font-settings.png 字体设置 %}
 
 #### 插件
 
@@ -643,7 +669,9 @@ onetab
 将需要修改的`desktop`文件从`/usr/share/applications/`复制到`~/.local/share/applications/`，再加上：
 
 ```
+
 --enable-features=WebRTCPipeWireCapturer --ozone-platform-hint=auto --enable-wayland-ime
+
 ```
 
 参数意义见<https://wiki.archlinux.org/title/Wayland#Electron>
@@ -655,6 +683,7 @@ onetab
 如`~/.config/electron-flags.conf`：
 
 ```
+
 --ozone-platform-hint=auto
 --enable-wayland-ime
 
@@ -663,9 +692,37 @@ onetab
 以及`~/.config/electron13-flags.conf`：
 
 ```
+
 --enable-features=UseOzonePlatform
 --ozone-platform=wayland
 --enable-wayland-ime
+
+```
+
+### btop 类似任务管理器
+
+```bash
+sudo pacman -S btop
+```
+
+catppuccin主题安装<https://github.com/catppuccin/btop>
+
+### openRGB 光污染必备
+
+```bash
+sudo pacman -S openrgb
+```
+
+设置自动启动：
+
+```
+exec-once = openrgb --startminimized --profile "your-profile-name"
+```
+
+### npm换源
+
+```bash
+npm config set registry=https://registry.npmmirror.com # 最新淘宝源
 ```
 
 ## Hyprland配置
