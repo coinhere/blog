@@ -205,7 +205,15 @@ export EDITOR='nvim'
 ```bash
 su myusername # 切换用户
 chsh -l # 查看安装了哪些 Shell
-chsh -s /usr/bin/zsh # 修改当前账户的默认 Shell
+chsh -s /usr/bin/fish # 修改当前账户的默认 Shell 为fish
+```
+
+更改fish编辑器，在`~/.config/fish/config.fish`中添加下一行:
+
+见<https://fishshell.com/docs/current/language.html#exporting-variables>
+
+```fish
+set -gx EDITOR nvim
 ```
 
 #### 开启 32 位支持库与 Arch Linux 中文社区仓库
@@ -602,10 +610,22 @@ neovide自动读取neovim的设置，因此neovide的设置也放在neovim中，
 if vim.g.neovide then
   vim.o.guifont = "Maple Mono NF CN:h9" -- 设置neovide字体
   vim.g.neovide_scale_factor = 1.0 -- neovide缩放与系统缩放叠加了，因此取消neovide的缩放
+  vim.g.neovide_refresh_rate = 120 -- 设置刷新率为120Hz
 end
 ```
 
-#### catppuccin主题美化
+`~/.config/nvim/lua/config/keymaps.lua`:
+
+```lua
+-- neovide keymaps
+if vim.g.neovide then
+  -- paste with Ctrl+shift+V
+  vim.keymap.set({ "i", "c" }, "<CS-v>", "<C-r>+")
+  vim.keymap.set({ "n", "v" }, "<CS-v>", '"+p')
+end
+```
+
+#### neovim主题美化
 
 创建并添加`~/.config/nvim/lua/plugins/colorscheme.lua`:
 
@@ -628,6 +648,82 @@ return {
   },
 }
 
+```
+
+#### Leetcode neovim
+
+在neovim中刷Leetcode，见<https://github.com/kawre/leetcode.nvim>:
+
+添加`~/.config/nvim/lua/plugins/leetcode.lua`:
+
+```lua
+return {
+  -- 在LazyVim中的开始界面添加leetcode的条目
+  {
+    "nvimdev/dashboard-nvim",
+    optional = true,
+    opts = function(_, opts)
+      local projects = { action = "Leet", desc = " Leet Code", icon = " ", key = "t" }
+      projects.desc = projects.desc .. string.rep(" ", 43 - #projects.desc)
+      projects.key_format = "  %s"
+
+      table.insert(opts.config.center, 9, projects)
+    end,
+  },
+
+  -- 添加leetcode的快捷键group
+  {
+    "folke/which-key.nvim",
+    opts = {
+      spec = {
+        { "<leader>l", group = "+leetcode" },
+      },
+    },
+  },
+  {
+    "kawre/leetcode.nvim",
+    cmd = "Leet", -- added for lazy start
+
+    build = ":TSUpdate html",
+    dependencies = {
+      "nvim-telescope/telescope.nvim",
+      "nvim-lua/plenary.nvim", -- required by telescope
+      "MunifTanjim/nui.nvim",
+
+      -- optional
+      "nvim-treesitter/nvim-treesitter",
+      "rcarriga/nvim-notify",
+      "nvim-tree/nvim-web-devicons",
+    },
+    opts = {
+      ---@type lc.lang
+      lang = "python3",
+
+      cn = { -- leetcode.cn
+        enabled = true, ---@type boolean
+        translator = false, ---@type boolean
+        translate_problems = false, ---@type boolean
+      },
+    },
+    keys = {
+      { "<leader>l", false }, -- disable <leader>l for :Lazy
+      { "<leader>lz", "<cmd>Lazy<cr>", desc = "Lazy" }, -- use <leader>lz for :Lazy
+      { "<leader>lm", "<cmd>Leet<cr>", desc = "Leetcode menu" }, -- start Leetcode and show menu
+      { "<leader>lc", "<cmd>Leet console<cr>", desc = "Leetcode console" },
+      { "<leader>li", "<cmd>Leet info<cr>", desc = "Leetcode info" },
+      { "<leader>l<tabs>", "<cmd>Leet tabs<cr>", desc = "Leetcode tabs" },
+      { "<leader>ly", "<cmd>Leet yank<cr>", desc = "Leetcode yank" },
+      { "<leader>la", "<cmd>Leet lang<cr>", desc = "Leetcode lang" },
+      { "<leader>l<cr>", "<cmd>Leet run<cr>", desc = "Leetcode run" },
+      { "<leader>ls", "<cmd>Leet submit<cr>", desc = "Leetcode submit" },
+      { "<leader>ll", "<cmd>Leet list<cr>", desc = "Leetcode list" },
+      { "<leader>lo", "<cmd>Leet open<cr>", desc = "Leetcode open" },
+      { "<leader>lr", "<cmd>Leet reset<cr>", desc = "Leetcode reset" },
+      { "<leader>lt", "<cmd>Leet last_submit<cr>", desc = "Leetcode last_submit" },
+      { "<leader>ld", "<cmd>Leet desc<cr>", desc = "Leetcode desc" },
+    },
+  }, -- configuration goes here
+}
 ```
 
 ### vscode
@@ -699,14 +795,6 @@ onetab
 
 ```
 
-### btop 类似任务管理器
-
-```bash
-sudo pacman -S btop
-```
-
-catppuccin主题安装<https://github.com/catppuccin/btop>
-
 ### openRGB 光污染必备
 
 ```bash
@@ -724,6 +812,72 @@ exec-once = openrgb --startminimized --profile "your-profile-name"
 ```bash
 npm config set registry=https://registry.npmmirror.com # 最新淘宝源
 ```
+
+### 其他有用工具
+
+#### yazi 终端文件系统
+
+查看安装指南，安装其他拓展：<https://yazi-rs.github.io/docs/installation/>
+
+- nerd-fonts (recommended)
+- ffmpegthumbnailer (for video thumbnails)
+- 7-Zip (for archive extraction and preview)
+- jq (for JSON preview)
+- poppler (for PDF preview)
+- fd (for file searching)
+- rg (for file content searching)
+- fzf (for quick file subtree navigation)
+- zoxide (for historical directories navigation)
+- ImageMagick (for SVG, Font, HEIC, and JPEG XL preview)
+- xclip / wl-clipboard / xsel (for system clipboard support)
+
+```bash
+sudo pacman -S yazi ffmpegthumbnailer p7zip jq poppler fd ripgrep fzf zoxide imagemagick
+```
+
+添加Shell wrapper以便yazi能够更改当前目录
+
+```fish
+function y
+ set tmp (mktemp -t "yazi-cwd.XXXXXX")
+ yazi $argv --cwd-file="$tmp"
+ if set cwd (command cat -- "$tmp"); and [ -n "$cwd" ]; and [ "$cwd" != "$PWD" ]
+  builtin cd -- "$cwd"
+ end
+ rm -f -- "$tmp"
+end
+
+```
+
+更改主题，见<https://github.com/yazi-rs/flavors?tab=readme-ov-file>
+
+#### zoxide 快捷跳转
+
+```bash
+sudo pacman -S zoxide
+```
+
+将下行加入到`~/.config/fish/config.fish`--仅用于`fish shell`:
+
+`--cmd cd`用`cd`替换`z`，`cdi`替换`zi`
+
+```
+zoxide init --cmd cd fish | source # start zoxide and replace with `cd`
+```
+
+#### btop 类似任务管理器
+
+```bash
+sudo pacman -S btop
+```
+
+安装后btop没有显示GPU信息，查看[README](https://github.com/aristocratos/btop?tab=readme-ov-file#gpu-compatibility)发现是少了一个依赖包，Archlinux运行下面的命令安装：
+
+```bash
+sudo pacman -S rocm-smi-lib
+```
+
+catppuccin主题安装<https://github.com/catppuccin/btop>
 
 ## Hyprland配置
 
@@ -821,3 +975,18 @@ offset = "214%" # percent of half size, offset = (2*size + margin)/size
 exec-once = /usr/bin/pypr
 bind = ,F12,exec,pypr toggle term
 ```
+
+### 动态壁纸
+
+这里使用[mpv paper](https://github.com/GhostNaN/mpvpaper)，可以将视频作为桌面，并支持mpv的设置。
+
+在`~/.config/hypr/userprefs.conf`中添加：
+
+```conf
+# -o 后面的为mpvpaper传递给mpv的参数
+# 意义为启动时随机以文件夹中的某个视频作为桌面，并循环播放，拉伸以填充整个屏幕（不留黑边）
+# 播放的可以是视频文件或者包含视频文件的文件夹
+exec-once = mpvpaper -f -o "--shuffle --loop --panscan=1.0" "*" /home/Videos/Wallpapers
+```
+
+mpvpaper参数意义见<https://github.com/GhostNaN/mpvpaper>，mpv详细设置见<https://mpv.io/manual/master>
