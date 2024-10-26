@@ -214,6 +214,7 @@ chsh -s /usr/bin/fish # 修改当前账户的默认 Shell 为fish
 
 ```fish
 set -gx EDITOR nvim
+set -gx MANPAGER 'nvim +Man!' # 使用nvim来查看man-pages，自动高亮
 ```
 
 #### 开启 32 位支持库与 Arch Linux 中文社区仓库
@@ -911,13 +912,17 @@ monitor = ,2880x1800@120.00,auto,auto
 >
 ### 触摸板方向不符合直觉，调转下滑方向
 
-Hyprland配置文件为`~/.config/hypr/hyprland.conf`，其中添加：
+Hyprland配置文件为`~/.config/hypr/hyprland.conf`，HyDE推荐修改`~/.config/hypr/userprefs.conf`，这会覆盖`hyprland.conf`中的内容：
 
-```~/.config/hypr/hyprland.conf
+```conf
 input {
   touchpad {
-    natural_scroll = true
+    natural_scroll = true # 反转触摸板下滑方向
   }
+}
+
+cursor {
+  inactive_timeout = 5 # 光标不动5秒后自动隐藏
 }
 ```
 
@@ -978,15 +983,114 @@ bind = ,F12,exec,pypr toggle term
 
 ### 动态壁纸
 
-这里使用[mpv paper](https://github.com/GhostNaN/mpvpaper)，可以将视频作为桌面，并支持mpv的设置。
+这里使用[mpvpaper](https://github.com/GhostNaN/mpvpaper)，可以将视频作为桌面，并支持mpv的设置。
+
+#### 安装
+
+```bash
+sudo pacman -S mpvpaper
+```
+
+#### 设置自动启动
 
 在`~/.config/hypr/userprefs.conf`中添加：
 
 ```conf
-# -o 后面的为mpvpaper传递给mpv的参数
-# 意义为启动时随机以文件夹中的某个视频作为桌面，并循环播放，拉伸以填充整个屏幕（不留黑边）
-# 播放的可以是视频文件或者包含视频文件的文件夹
-exec-once = mpvpaper -f -o "--shuffle --loop --panscan=1.0" "*" /home/Videos/Wallpapers
+exec-once = mpvpaper -f -n 7200 -o "input-ipc-server=/tmp/mpv-socket --shuffle --loop --loop-playlist --panscan=1.0 --osd-level=0" "*" /home/Videos/Wallpapers
 ```
 
-mpvpaper参数意义见<https://github.com/GhostNaN/mpvpaper>，mpv详细设置见<https://mpv.io/manual/master>
+参数解释:
+
+mpvpaper详细参数意义见`man mpvpaper`，mpv详细设置见<https://mpv.io/manual/master>
+
+- `-f` -- fork mpvpaper从而可以关闭终端
+- `-n 7200` -- 幻灯片模式每2小时（7200秒）播放播放列表中的下一个视频，需配合`--loop`, `--loop-playlist`使用
+- `-o` -- mpvpaper传递参数给mpv
+  - `input-ipc-server=/tmp/mpv-socket` -- 提供mpvpaper的控制接口
+  - `shuffle` -- 启动时打乱播放列表
+  - `loop` -- 循环播放视频
+  - `loop-playlist` -- 循环播放列表
+  - `panscan=1.0` -- 拉伸以填充整个屏幕（不留黑边）
+  - `osd-level=0` -- 去除所有mpv渲染在视频上的OSD信息，避免禁音mpv时显示"Mute: yes"
+- `"*"` -- 显示在所有屏幕上
+- `/home/Video/Wallpapers` -- # 播放的可以是视频文件或者包含视频文件的文件夹
+
+此外，还需要将启动壁纸的程序注释掉，以免视频桌面被覆盖，在`~/.config/hypr/hyprland.conf`：
+
+```conf
+# exec-once = $scrPath/swwwallpaper.sh # start wallpaper daemon
+```
+
+#### 添加控制壁纸快捷键
+
+在`~/.config/hypr/keybindings.conf`：
+
+需要开启mpvpaper控制接口，并安装`socat`
+
+```conf
+# mpv-paper
+bind = $mainMod, F5, exec, echo 'cycle mute' | socat - /tmp/mpv-socket # 静音/取消静音
+bind = $mainMod, F6, exec, echo 'playlist-prev' | socat - /tmp/mpv-socket # 播放上一个
+bind = $mainMod, F7, exec, echo 'cycle pause' | socat - /tmp/mpv-socket # 暂停/取消暂停
+bind = $mainMod, F8, exec, echo 'playlist-next' | socat - /tmp/mpv-socket # 播放下一个
+```
+
+#### 自动暂停、禁音
+
+mpvpaper提供`--auto-pause`和`--auto-stop`的参数，但在hyprland中没有效果，因此自己写了个脚本，见<https://gist.github.com/coinhere/b97695322f9079a2178bb55120f2a795>
+
+作用是：
+
+- 工作区存在窗口时静音
+- 窗口全屏时（非最大化）暂停
+
+需要开启mpvpaper控制接口，并安装`socat`
+
+记得添加至自动启动。
+
+### 自动锁屏、关闭屏幕
+
+下载[hypridle](https://wiki.hyprland.org/Hypr-Ecosystem/hypridle/)
+
+```bash
+sudo pacman -S hypridle
+```
+
+创建`~/.config/hypr/hypridle.conf`并添加：
+
+```conf
+general {
+    lock_cmd = pidof swaylock || swaylock       # avoid starting multiple hyprlock instances.
+    before_sleep_cmd = loginctl lock-session    # lock before suspend.
+    after_sleep_cmd = hyprctl dispatch dpms on  # to avoid having to press a key twice to turn on the display.
+}
+
+listener {
+    timeout = 150                                # 2.5min.
+    on-timeout = brightnessctl -s set 10         # set monitor backlight to minimum, avoid 0 on OLED monitor.
+    on-resume = brightnessctl -r                 # monitor backlight restore.
+}
+
+# turn off keyboard backlight, comment out this section if you dont have a keyboard backlight.
+# listener { 
+#     timeout = 150                                          # 2.5min.
+#     on-timeout = brightnessctl -sd rgb:kbd_backlight set 0 # turn off keyboard backlight.
+#     on-resume = brightnessctl -rd rgb:kbd_backlight        # turn on keyboard backlight.
+# }
+
+listener {
+    timeout = 300                                 # 5min
+    on-timeout = loginctl lock-session            # lock screen when timeout has passed
+}
+
+listener {
+    timeout = 330                                 # 5.5min
+    on-timeout = hyprctl dispatch dpms off        # screen off when timeout has passed
+    on-resume = hyprctl dispatch dpms on          # screen on when activity is detected after timeout has fired.
+}
+
+listener {
+    timeout = 1800                                # 30min
+    on-timeout = systemctl suspend                # suspend pc
+}
+```
