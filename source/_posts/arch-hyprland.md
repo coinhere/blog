@@ -223,14 +223,14 @@ set -gx MANPAGER 'nvim +Man!' # 使用nvim来查看man-pages，自动高亮
 
 取消下面两行的注释：
 
-```
+```conf
 #[multilib]
 #Include = /etc/pacman.d/mirrorlist
 ```
 
 并添加：
 
-```
+```conf
 [archlinuxcn]
 Server = https://mirrors.ustc.edu.cn/archlinuxcn/$arch # 中国科学技术大学开源镜像站
 Server = https://mirrors.tuna.tsinghua.edu.cn/archlinuxcn/$arch # 清华大学开源软件镜像站
@@ -240,7 +240,7 @@ Server = https://repo.huaweicloud.com/archlinuxcn/$arch # 华为开源镜像站
 
 #### 更新`pacman`数据库，安装一些基础功能包
 
-```
+```bash
 pacman -Syyu
 sudo pacman -S sof-firmware alsa-firmware alsa-ucm-conf # 声音固件
 sudo pacman -S adobe-source-han-serif-cn-fonts wqy-zenhei # 安装几个开源中文字体。一般装上文泉驿就能解决大多 wine 应用中文方块的问题
@@ -258,14 +258,33 @@ yay -S ttf-ms-win11-auto-zh_cn # 微软字体
 sudo pacman -S timeshift
 ```
 
-修改`/etc/timeshift/timeshift.json`，修改的行如下，运行`lsblk`查看UUID：
+修改`/etc/timeshift/timeshift.json`如下，运行`lsblk`查看UUID：
 
-```
-  "backup_device_uuid" : "21b2199f-38e4-4bf1-ae1e-0c9d4d0431f8", # 修改为自己备份分区的UUID
+```json
+{
+  "backup_device_uuid" : "21b2199f-38e4-4bf1-ae1e-0c9d4d0431f8",
+  "parent_device_uuid" : "",
   "do_first_run" : "false",
   "btrfs_mode" : "true",
-  "include_btrfs_home" : "true", # 是否备份/home
-  "include_btrfs_home_for_restore" : "true", # 是否恢复/home
+  "include_btrfs_home_for_backup" : "true",
+  "include_btrfs_home_for_restore" : "false",
+  "stop_cron_emails" : "true",
+  "schedule_monthly" : "false",
+  "schedule_weekly" : "false",
+  "schedule_daily" : "true",
+  "schedule_hourly" : "false",
+  "schedule_boot" : "false",
+  "count_monthly" : "2",
+  "count_weekly" : "3",
+  "count_daily" : "5",
+  "count_hourly" : "6",
+  "count_boot" : "5",
+  "snapshot_size" : "0",
+  "snapshot_count" : "0",
+  "date_format" : "%Y-%m-%d %H:%M:%S",
+  "exclude" : [],
+  "exclude-apps" : []
+}
 ```
 
 安装Hyprland之后，如果遇到timeshift GUI 无法启动的情况，需要安装`xorg-xhost`，原因见[arch wiki](https://wiki.archlinux.org/title/Timeshift#Timeshift_GUI_not_launching_on_Wayland)
@@ -290,7 +309,7 @@ timeshift --create --comments "after update" --tags D # 创建快照，标签为
 
 因为是移动硬盘，且主力机是40系显卡配Intel核显以及AMD核显笔记本，我安装的是：
 
-```
+```bash
 sudo pacman -S mesa lib32-mesa vulkan-intel lib32-vulkan-intel # Intel 核芯显卡
 sudo pacman -S mesa lib32-mesa xf86-video-amdgpu vulkan-radeon lib32-vulkan-radeon #AMD 集成显卡
 sudo pacman -S nvidia nvidia-settings lib32-nvidia-utils # NVIDIA 独立显卡
@@ -301,7 +320,7 @@ Arch Wiki 提示：
 
 在`HOOKS`中，删除`kms`
 
-```
+```conf
 HOOKS=(base udev keyboard block autodetect microcode modconf keymap consolefont filesystems fsck)
 ```
 
@@ -351,7 +370,7 @@ git pull
 
 更新前修改`Scripts/restore_cfg.lst`来避免之前的配置被覆盖，我修改的是：
 
-```
+```lst
 N|Y|${HOME}/.config/kitty|kitty.conf|kitty
 N|Y|${HOME}/.config/waybar|config.ctl|waybar
 ```
@@ -410,7 +429,7 @@ sudo keyd monitor
 
 添加配置文件`/etc/keyd/default.conf`，如下所示：
 
-```
+```conf
 [ids]
 
 *
@@ -492,7 +511,7 @@ sudo pacman -S fcitx5-rime # 安装rime输入法
 
 创建`~/.config/environment.d/im.conf`，并添加(详细信息见[fcitx5 in wayland](https://fcitx-im.org/wiki/Using_Fcitx_5_on_Wayland#Chromium_.2F_Electron))：
 
-```
+```conf
 XMODIFIERS=@im=fcitx
 QT_IM_MODULE=fcitx
 ```
@@ -518,7 +537,7 @@ yay -S rime-ice # 雾凇拼音输入方案
 
 创建`~/.local/share/fcitx5/rime/default.custom.yaml`并添加：
 
-```
+```yaml
 patch:
   # 仅使用「雾凇拼音」的默认配置，配置此行即可
   __include: rime_ice_suggestion:/
@@ -533,7 +552,7 @@ patch:
 
 记得设置自动启动，在`~/.config/hypr/hyprland.conf`:
 
-```
+```conf
 exec-once = fcitx5 --replace -d
 ```
 
@@ -600,7 +619,7 @@ sudo pacman -S neovide
 
 记得在`~/.config/hypr/keybindings.conf`中添加启动快捷键：
 
-```
+```conf
 bind = $mainMod, N, exec, neovide # launch terminal emulator
 ```
 
@@ -630,7 +649,7 @@ end
 
 创建并添加`~/.config/nvim/lua/plugins/colorscheme.lua`:
 
-```
+```lua
 return {
   {
     "folke/tokyonight.nvim",
@@ -648,7 +667,6 @@ return {
     },
   },
 }
-
 ```
 
 #### Leetcode neovim
@@ -733,7 +751,7 @@ return {
 
 在`~/.config/code-flags.conf`中加入：
 
-```
+```conf
 --enable-wayland-ime
 ```
 
@@ -765,10 +783,8 @@ onetab
 
 将需要修改的`desktop`文件从`/usr/share/applications/`复制到`~/.local/share/applications/`，再加上：
 
-```
-
+```desktop
 --enable-features=WebRTCPipeWireCapturer --ozone-platform-hint=auto --enable-wayland-ime
-
 ```
 
 参数意义见<https://wiki.archlinux.org/title/Wayland#Electron>
@@ -779,21 +795,17 @@ onetab
 
 如`~/.config/electron-flags.conf`：
 
-```
-
+```conf
 --ozone-platform-hint=auto
 --enable-wayland-ime
-
 ```
 
 以及`~/.config/electron13-flags.conf`：
 
-```
-
+```conf
 --enable-features=UseOzonePlatform
 --ozone-platform=wayland
 --enable-wayland-ime
-
 ```
 
 ### openRGB 光污染必备
@@ -804,7 +816,7 @@ sudo pacman -S openrgb
 
 设置自动启动：
 
-```
+```conf
 exec-once = openrgb --startminimized --profile "your-profile-name"
 ```
 
@@ -847,7 +859,6 @@ function y
  end
  rm -f -- "$tmp"
 end
-
 ```
 
 更改主题，见<https://github.com/yazi-rs/flavors?tab=readme-ov-file>
@@ -862,7 +873,7 @@ sudo pacman -S zoxide
 
 `--cmd cd`用`cd`替换`z`，`cdi`替换`zi`
 
-```
+```fish
 zoxide init --cmd cd fish | source # start zoxide and replace with `cd`
 ```
 
@@ -872,7 +883,7 @@ zoxide init --cmd cd fish | source # start zoxide and replace with `cd`
 sudo pacman -S btop
 ```
 
-安装后btop没有显示GPU信息，查看[README](https://github.com/aristocratos/btop?tab=readme-ov-file#gpu-compatibility)发现是少了一个依赖包，Archlinux运行下面的命令安装：
+安装后btop没有显示AMD的GPU信息，查看[README](https://github.com/aristocratos/btop?tab=readme-ov-file#gpu-compatibility)发现是少了一个依赖包，Archlinux运行下面的命令安装：
 
 ```bash
 sudo pacman -S rocm-smi-lib
@@ -890,7 +901,7 @@ HYDE中设置屏幕参数在`~/.config/hypr/monitors.conf`，详细设置查看<
 
 默认是：
 
-```config
+```conf
 monitor = ,preferred,auto,auto
 ```
 
@@ -902,7 +913,7 @@ hyprctl monitors
 
 ，选择你需要的设置，添加到`~/.config/hypr/monitors.conf`中，例如:
 
-```config
+```conf
 monitor = ,2880x1800@120.00,auto,auto
 ```
 
@@ -910,7 +921,7 @@ monitor = ,2880x1800@120.00,auto,auto
 >
 > 这是因为小新主板提供的EDID信息（主板提供给操作系统显示器的信息，包括可使用的分辨率和刷新率）的校验和错误，需要将错误的EDID反编译、更正再编译后加载进内核，Bug探讨和详细的解决方法见<https://bbs.archlinux.org/viewtopic.php?id=289701>。
 >
-### 触摸板方向不符合直觉，调转下滑方向
+### Hyprland Variable 配置
 
 Hyprland配置文件为`~/.config/hypr/hyprland.conf`，HyDE推荐修改`~/.config/hypr/userprefs.conf`，这会覆盖`hyprland.conf`中的内容：
 
@@ -924,6 +935,25 @@ input {
 cursor {
   inactive_timeout = 5 # 光标不动5秒后自动隐藏
 }
+
+# group bar颜色调整
+group {
+  groupbar {
+    col.active = rgba(a6e3a188)
+    col.inactive = rgba(6c708688)
+    col.locked_active = rgba(a6e3a188)
+    col.locked_inactive = rgba(6c708688)
+  }
+}
+```
+
+### 配置window rules
+
+```conf
+windowrulev2 = opacity 0.80 0.80,class:^(kitty-dropterm)$
+windowrulev2 = opacity 0.80 0.80,class:^(neovide)$
+windowrulev2 = noblur,class:^(kitty)|^(neovide)$,focus:0 # 未锁定的kitty和neovide窗口取消模糊
+windowrulev2 = bordercolor rgba(a6d189ff) rgba(8caaeeff) 45deg, fullscreen:1 # 最大化窗口时改变边框颜色
 ```
 
 ### waybar任务栏设置
@@ -932,11 +962,43 @@ waybar配置文件为`~/.config/waybar/config.ctl`。
 第一个数字代表正在启用的配置。
 HYDE中`win+alt+UP`、`win+alt+DOWN`切换waybar配置。
 
+我的设置为：
+
+```conf
+1|31|top|( idle_inhibitor clock ) ( cpu memory custom/cpuinfo custom/gpuinfo network ) ( custom/cava )|( hyprland/workspaces )|( custom/spotify pulseaudio pulseaudio#microphone backlight custom/updates ) ( privacy tray battery ) ( custom/wallchange custom/theme custom/wbar custom/cliphist custom/power )
+```
+
+#### cava module设置
+
+将下列代码添加至`~/.config/hyde/hyde.conf`中，注释掉希望启用的那一行
+
+需要在`~/.config/waybar/config.ctl`中启用`custom/cava`
+
+```conf
+# waybar_cava_bar="▁▂▃▄▅▆▇█"
+# waybar_cava_bar="▏▎▍▌▋▊▉█"
+# waybar_cava_bar="░▒▓█"
+# waybar_cava_bar="▖▗▘▙▚▛▜▝▞▟"
+# waybar_cava_bar="▂▃▄▅▆▇█"
+#waybar_cava_bar="▕▏▎▍▌▋▊▉"
+# waybar_cava_bar="⣀⣄⣤⣦⣶⣷⣿"
+# waybar_cava_bar="⠁⠂⠄⡀⢀⠠⠐⠈"
+# waybar_cava_bar="⠋⠙⠹⢸⣰⣤⣦⣶"
+# waybar_cava_bar="⠁⠃⠇⡇⣇⣧⣷⣿"
+waybar_cava_bar="🌑🌒🌓🌔🌕🌖🌗🌘"
+# waybar_cava_bar="🌑🌘🌗🌖🌔🌓🌒🌑"
+#waybar_cava_bar="🌕🌖🌗🌘🌒🌓🌔🌕"
+# waybar_cava_bar="★☆★☆★☆★☆"
+# waybar_cava_bar="⣾⣽⣻⢿⡿⣟⣯⣷"
+# waybar_cava_bar="ᗧᗣᗤᗥᗦᗧᗣᗤᗥᗦ"
+```
+
 ### HyDE更新覆盖设置
 
 在`~/HyDE/Scripts/restore_cfg.lst`中，我修改的是：
 
-```
+```lst
+N|Y|${HOME}/.config|fish/config.fish|fish
 N|Y|${HOME}/.config/kitty|kitty.conf|kitty
 N|Y|${HOME}/.config/waybar|config.ctl|waybar
 ```
@@ -947,7 +1009,7 @@ N|Y|${HOME}/.config/waybar|config.ctl|waybar
 
 在`/usr/share/sddm/themes/<theme-name>/theme.conf`修改：
 
-```
+```conf
 GeneralFontSize="18"
 ```
 
@@ -979,6 +1041,26 @@ offset = "214%" # percent of half size, offset = (2*size + margin)/size
 ```conf
 exec-once = /usr/bin/pypr
 bind = ,F12,exec,pypr toggle term
+```
+
+### workspaces preview
+
+类似KDE，显示所有的工作区，并可删除、拖动工作区中的窗口。
+
+HyDE没有window preview的功能，而JaKooLit有，因此我从[JaKooLit's Hyprland Dotfiles](https://github.com/JaKooLit/Hyprland-Dots)的设置中将workspaces preview的代码搬了过来，这两个Hyprland配置均使用`GPL v3.0`协议。
+
+该功能由[AGS](https://github.com/Aylur/ags)实现的，因此先安装AGS:
+
+```bash
+sudo pacman -S ags
+```
+
+之后将JaKooLit的AGS设置复制到`~/.config/ags/`中，其中有一个引用的css文件`colors-waybar.css`同样需要转移。
+
+不要忘记添加至自动启动：
+
+```conf
+exec-once = ags
 ```
 
 ### 动态壁纸
@@ -1046,7 +1128,11 @@ mpvpaper提供`--auto-pause`和`--auto-stop`的参数，但在hyprland中没有�
 
 需要开启mpvpaper控制接口，并安装`socat`
 
-记得添加至自动启动。
+记得添加自动启动
+
+```conf
+exec-once = $HOME/.config/hypr/scripts/auto_pause_mute_mpvpaper.sh
+```
 
 ### 自动锁屏、关闭屏幕
 
@@ -1057,6 +1143,8 @@ sudo pacman -S hypridle
 ```
 
 创建`~/.config/hypr/hypridle.conf`并添加：
+
+黑屏时自动停止mpv-paper
 
 ```conf
 general {
@@ -1085,8 +1173,8 @@ listener {
 
 listener {
     timeout = 330                                 # 5.5min
-    on-timeout = hyprctl dispatch dpms off        # screen off when timeout has passed
-    on-resume = hyprctl dispatch dpms on          # screen on when activity is detected after timeout has fired.
+    on-timeout = echo 'set pause yes' | socat - /tmp/mpv-socket && hyprctl dispatch dpms off        # screen off when timeout has passed
+    on-resume = hyprctl dispatch dpms on && echo 'set pause no' | socat - /tmp/mpv-socket         # screen on when activity is detected after timeout has fired.
 }
 
 listener {
