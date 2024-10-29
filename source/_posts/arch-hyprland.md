@@ -516,6 +516,13 @@ XMODIFIERS=@im=fcitx
 QT_IM_MODULE=fcitx
 ```
 
+或者在`~/.config/hypr/userprefs.conf`中添加：
+
+```conf
+env = XMODIFIERS,@im=fcitx
+env = QT_IM_MODULE,fcitx
+```
+
 #### 启动fcitx5，安装rime输入法
 
 ```bash
@@ -774,6 +781,7 @@ Hyprlan默认的字体有些奇怪，这里修改字体设置。需要安装Wind
 
 onetab
 欧路词典
+Vimium -- 类vim按键浏览网页，全键盘工作必备
 
 #### 取消视频自动静音
 
@@ -816,8 +824,10 @@ sudo pacman -S openrgb
 
 设置自动启动：
 
+启动后加载灯效配置后会自动退出
+
 ```conf
-exec-once = openrgb --startminimized --profile "your-profile-name"
+exec-once = openrgb --profile "your-profile-name"
 ```
 
 ### npm换源
@@ -891,6 +901,28 @@ sudo pacman -S rocm-smi-lib
 
 catppuccin主题安装<https://github.com/catppuccin/btop>
 
+##### 设置下拉式btop窗口，方便随时查看
+
+与[下拉式终端](#hyprland-drop-down-terminal)类似：
+在`~/.config/hypr/pyprland.toml`:
+
+```
+[scratchpads.dropbtop]
+animation = "fromBottom"
+command = "kitty --class kitty-btop --title kitty-btop btop"
+class = "kitty-btop"
+size = "75% 75%" # percent of full screen
+max_size = "1920px 100%"
+margin = "25%" # percent of half screen
+offset = "233%" # percent of half size, offset = (2*size + margin)/size
+```
+
+添加快捷键：
+
+```conf
+bind = ,F9,exec,pypr toggle dropbtop
+```
+
 ## Hyprland配置
 
 详细见[Hyprland Wiki](https://wiki.hyprland.org/Getting-Started/Preconfigured-setups/#prasanthrangan)
@@ -919,7 +951,7 @@ monitor = ,2880x1800@120.00,auto,auto
 
 > *注意*：如果你使用的电脑和笔者一样是`联想小新14Pro 2023`，且搭载的CPU是`AMD7840HS`，那么你会发现运行`hyprctl monitor`的结果中没有刷新率为120Hz的显示器设置，然而在Windows中可以正常应用120HZ，并且在Hyprland中强制使用120Hz会发现屏幕闪烁、变色、模糊。
 >
-> 这是因为小新主板提供的EDID信息（主板提供给操作系统显示器的信息，包括可使用的分辨率和刷新率）的校验和错误，需要将错误的EDID反编译、更正再编译后加载进内核，Bug探讨和详细的解决方法见<https://bbs.archlinux.org/viewtopic.php?id=289701>。
+> 这是因为小新主板提供的EDID信息（主板提供给操作系统显示器的信息，包括可使用的分辨率和刷新率）的校验和错误，需要将错误的EDID反编译、更正再编译后加载进内核，方能在Hyprland中使用正常的120Hz，Bug探讨和详细的解决方法见<https://bbs.archlinux.org/viewtopic.php?id=289701>。
 >
 ### Hyprland Variable 配置
 
@@ -950,25 +982,223 @@ group {
 ### 配置window rules
 
 ```conf
-windowrulev2 = opacity 0.80 0.80,class:^(kitty-dropterm)$
-windowrulev2 = opacity 0.80 0.80,class:^(neovide)$
+windowrulev2 = opacity 0.80 0.80,class:^(kitty)|^(neovide)$ # 透明kitty的下拉窗口和neovide
 windowrulev2 = noblur,class:^(kitty)|^(neovide)$,focus:0 # 未锁定的kitty和neovide窗口取消模糊
-windowrulev2 = bordercolor rgba(a6d189ff) rgba(8caaeeff) 45deg, fullscreen:1 # 最大化窗口时改变边框颜色
+windowrulev2 = bordercolor rgba(d20f39ff) rgba(fe640bff) 45deg, fullscreen:1 # 最大化窗口时改变边框颜色
 ```
 
 ### waybar任务栏设置
 
-waybar配置文件为`~/.config/waybar/config.ctl`。
-第一个数字代表正在启用的配置。
-HYDE中`win+alt+UP`、`win+alt+DOWN`切换waybar配置。
+waybar配置文件为`~/.config/waybar/config.jsonc`，HyDE中该文件是根据`~/.config/waybar/config.ctl`自动生成的。
+
+`~/.config/waybar/config.ctl`中，第一个数字代表正在启用的配置，第二个数字代表高度。
 
 我的设置为：
 
 ```conf
-1|31|top|( idle_inhibitor clock ) ( cpu memory custom/cpuinfo custom/gpuinfo network ) ( custom/cava )|( hyprland/workspaces )|( custom/spotify pulseaudio pulseaudio#microphone backlight custom/updates ) ( privacy tray battery ) ( custom/wallchange custom/theme custom/wbar custom/cliphist custom/power )
+1|31|top|( custom/power custom/cliphist custom/wallchange ) ( group/hardware network ) ( custom/cava mpris )|( hyprland/workspaces wlr/taskbar )|( pulseaudio pulseaudio#microphone backlight custom/updates ) ( privacy tray battery ) ( idle_inhibitor clock )
 ```
 
-#### cava module设置
+{% asset_img waybar.png 分区示例 %}
+
+#### waybar module修改
+
+微调了几个waybar的module:
+
+##### custom/wallchange
+
+`custom/wallchange`单击切换下一张壁纸，右键单击切换上一张壁纸，中键单击出现壁纸选择页面。
+
+因为我用的是[mpvpaper](#动态壁纸)动态壁纸，所以把命令改成了对应的：下一个视频、上一个视频、静音：
+
+```jsonc
+    "custom/wallchange": {
+          "format": "{}",
+          "rotate": "${r_deg}",
+          "exec": "echo ; echo 󰆊 switch wallpaper",
+          // "on-click": "swwwallpaper.sh -n",
+          // "on-click-right": "swwwallpaper.sh -p",
+          // "on-click-middle": "sleep 0.1 && swwwallselect.sh",
+          "on-click": "echo 'playlist-next' | socat - /tmp/mpv-socket",
+          "on-click-right": "echo 'playlist-prev' | socat - /tmp/mpv-socket",
+          "on-click-middle": "echo 'cycle mute' | socat - /tmp/mpv-socket ",
+          "interval": 86400, // once every day
+          "tooltip": true
+          },
+```
+
+##### group/hardware
+
+显示cpu、内存、CPU温度、GPU温度。
+
+将`cpu`、`memory`、`custom/cpuinfo`、`custom/gpuinfo`合在一起堆叠，光标移过去会展开所有组件。
+
+```jsonc
+    "group/hardware": {
+          "orientation": "inherit",
+          "drawer": {
+                "transition-duration": 500
+              },
+          "modules": [
+                "cpu",
+                "memory",
+                "custom/cpuinfo",
+                "custom/gpuinfo"
+              ]
+            },
+        "cpu": {
+          "interval": 10,
+          "format": "󰍛 {usage}%",
+          "rotate": "${r_deg}",
+          "format-alt": "{icon0}{icon1}{icon2}{icon3}",
+          "format-icons": [
+                "▁",
+                "▂",
+                "▃",
+                "▄",
+                "▅",
+                "▆",
+                "▇",
+                "█"
+              ]
+            },
+        "memory": {
+          "states": {
+              "c": 90, // critical
+            "h": 60, // high
+            "m": 30, // medium
+          },
+          "interval": 30,
+          "format": "󰾆 {used}GB",
+          "rotate": "${r_deg}",
+          "format-m": "󰾅 {used}GB",
+          "format-h": "󰓅 {used}GB",
+          "format-c": " {used}GB",
+          "format-alt": "󰾆 {percentage}%",
+          "max-length": 10,
+          "tooltip": true,
+          "tooltip-format": "󰾆 {percentage}%\n {used:0.1f}GB/{total:0.1f}GB"
+          },
+        "custom/cpuinfo": {
+          "exec": " cpuinfo.sh",
+          "return-type": "json",
+          "format": "{}",
+          "rotate": "${r_deg}",
+          "interval": 5, // once every 5 seconds
+          "tooltip": true,
+          "max-length": 1000
+          },
+        "custom/gpuinfo": {
+          "exec": " gpuinfo.sh",
+          "return-type": "json",
+          "format": "{}",
+          "rotate": "${r_deg}",
+          "interval": 5, // once every 5 seconds
+          "tooltip": true,
+          "max-length": 1000,
+          "on-click": "gpuinfo.sh --toggle",
+        },
+        "custom/gpuinfo#nvidia": {
+              "exec": " gpuinfo.sh --use nvidia ",
+          "return-type": "json",
+          "format": "{}",
+          "rotate": "${r_deg}",
+          "interval": 5, // once every 5 seconds
+          "tooltip": true,
+          "max-length": 1000,
+        },
+        "custom/gpuinfo#amd": {
+              "exec": " gpuinfo.sh --use amd ",
+          "return-type": "json",
+          "format": "{}",
+          "rotate": "${r_deg}",
+          "interval": 5, // once every 5 seconds
+          "tooltip": true,
+          "max-length": 1000,
+        },
+        "custom/gpuinfo#intel": {
+              "exec": " gpuinfo.sh --use intel ",
+          "return-type": "json",
+          "format": "{}",
+          "rotate": "${r_deg}",
+          "interval": 5, // once every 5 seconds
+          "tooltip": true,
+          "max-length": 1000,
+        },
+```
+
+##### mpris
+
+显示并可控制当前播放的音频
+
+简单去掉了"album"，因为太长了:
+
+```jsonc
+    "mpris": {
+          "format": "{player_icon} {dynamic}",
+          "rotate": "${r_deg}",
+          "format-paused": "{status_icon} <i>{dynamic}</i>",
+          "player-icons": {
+                "default": "▶",
+            "mpv": "🎵"
+              },
+          "status-icons": {
+                "paused": ""
+              },
+          // "ignored-players": ["firefox"]
+          // "max-length": 1000,
+          "interval": 1,
+          "dynamic-order": [
+                "title",
+                "artist",
+                // "album",
+                "position",
+                "length"
+              ]
+            },
+```
+
+##### wlr/taskbar
+
+显示所有窗口的图标，点击会切换该窗口的工作区并聚焦其上
+
+将两个scratchpad加入了忽略名单中，避免干扰正常窗口：
+
+```jsonc
+  "wlr/taskbar": {
+      "format": "{icon}",
+      "rotate": "${r_deg}",
+      "icon-size": "${i_task}",
+      "icon-theme": "${i_theme}",
+      "spacing": 0,
+      "tooltip-format": "{title}",
+      "on-click": "activate",
+      "on-click-middle": "close",
+      "ignore-list": [
+            "Alacritty",
+            "kitty-dropterm",
+            "kitty-btop"
+          ],
+      "app_ids-mapping": {
+            "firefoxdeveloperedition": "firefox-developer-edition",
+        "jetbrains-datagrip": "DataGrip"
+          }
+        },
+```
+
+注意需要正确设置这两个应用的`title`，见[dropterm](#hyprland-drop-down-terminal), [dropbtop](#设置下拉式btop窗口，方便随时查看)
+
+##### cava module设置
+
+该模组在waybar上可视化显示音乐频率
+
+需要先安装`cava`:
+
+```bash
+sudo pacman -S cava
+```
+
+更改waybar上cava的外观:
 
 将下列代码添加至`~/.config/hyde/hyde.conf`中，注释掉希望启用的那一行
 
@@ -995,12 +1225,24 @@ waybar_cava_bar="🌑🌒🌓🌔🌕🌖🌗🌘"
 
 ### HyDE更新覆盖设置
 
-在`~/HyDE/Scripts/restore_cfg.lst`中，我修改的是：
+HyDE的更新命令是：
+
+```bash
+cd ~/HyDE/Scripts/
+git pull
+./install -r
+```
+
+更新时，会备份和覆盖配置，可以在`~/HyDE/Scripts/restore_cfg.lst`中修改，我修改的是：
+
+第一个字符为是否覆盖，第二个字符为是否备份。
 
 ```lst
 N|Y|${HOME}/.config|fish/config.fish|fish
+Y|Y|${HOME}/.config/kitty|theme.conf|kitty
 N|Y|${HOME}/.config/kitty|kitty.conf|kitty
-N|Y|${HOME}/.config/waybar|config.ctl|waybar
+Y|Y|${HOME}/.config/waybar|config.jsonc style.css theme.css|waybar
+N|Y|${HOME}/.config/waybar|config.ctl modules|waybar
 ```
 
 ### SDDM theme
@@ -1028,7 +1270,7 @@ plugins = ["scratchpads"]
 
 [scratchpads.term]
 animation = "fromTop"
-command = "kitty --class kitty-dropterm"
+command = "kitty --class kitty-dropterm --title kitty-dropterm"
 class = "kitty-dropterm"
 size = "75% 50%" # percent of full screen
 max_size = "1920px 100%"
