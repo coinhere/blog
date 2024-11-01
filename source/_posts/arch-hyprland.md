@@ -779,9 +779,10 @@ Hyprlan默认的字体有些奇怪，这里修改字体设置。需要安装Wind
 
 #### 插件
 
-onetab
-欧路词典
-Vimium -- 类vim按键浏览网页，全键盘工作必备
+- onetab
+- 欧路词典
+- Vimium -- 类vim按键浏览网页，全键盘工作必备
+- Infinity New Tab
 
 #### 取消视频自动静音
 
@@ -961,6 +962,7 @@ Hyprland配置文件为`~/.config/hypr/hyprland.conf`，HyDE推荐修改`~/.conf
 input {
   touchpad {
     natural_scroll = true # 反转触摸板下滑方向
+    scroll_factor = 0.5 # 降低触摸板下滑速度
   }
 }
 
@@ -982,9 +984,11 @@ group {
 ### 配置window rules
 
 ```conf
+windowrulev2 = opacity 0.90 0.90,class:^(google-chrome)$
 windowrulev2 = opacity 0.80 0.80,class:^(kitty)|^(neovide)$ # 透明kitty的下拉窗口和neovide
 windowrulev2 = noblur,class:^(kitty)|^(neovide)$,focus:0 # 未锁定的kitty和neovide窗口取消模糊
 windowrulev2 = bordercolor rgba(d20f39ff) rgba(fe640bff) 45deg, fullscreen:1 # 最大化窗口时改变边框颜色
+layerrule = order -1, mpvpaper # 避免mpvpaper桌面被覆盖
 ```
 
 ### waybar任务栏设置
@@ -1009,7 +1013,7 @@ waybar配置文件为`~/.config/waybar/config.jsonc`，HyDE中该文件是根据
 
 `custom/wallchange`单击切换下一张壁纸，右键单击切换上一张壁纸，中键单击出现壁纸选择页面。
 
-因为我用的是[mpvpaper](#动态壁纸)动态壁纸，所以把命令改成了对应的：下一个视频、上一个视频、静音：
+因为我用的是[mpvpaper](#动态壁纸)动态壁纸，所以把命令改成了对应的：下一个视频、上一个视频、暂停：
 
 ```jsonc
     "custom/wallchange": {
@@ -1021,7 +1025,7 @@ waybar配置文件为`~/.config/waybar/config.jsonc`，HyDE中该文件是根据
           // "on-click-middle": "sleep 0.1 && swwwallselect.sh",
           "on-click": "echo 'playlist-next' | socat - /tmp/mpv-socket",
           "on-click-right": "echo 'playlist-prev' | socat - /tmp/mpv-socket",
-          "on-click-middle": "echo 'cycle mute' | socat - /tmp/mpv-socket ",
+          "on-click-middle": "echo 'cycle pause' | socat - /tmp/mpv-socket ",
           "interval": 86400, // once every day
           "tooltip": true
           },
@@ -1145,7 +1149,7 @@ waybar配置文件为`~/.config/waybar/config.jsonc`，HyDE中该文件是根据
           "status-icons": {
                 "paused": ""
               },
-          // "ignored-players": ["firefox"]
+          "ignored-players": ["firefox"]
           // "max-length": 1000,
           "interval": 1,
           "dynamic-order": [
@@ -1297,12 +1301,24 @@ HyDE没有window preview的功能，而JaKooLit有，因此我从[JaKooLit's Hyp
 sudo pacman -S ags
 ```
 
-之后将JaKooLit的AGS设置复制到`~/.config/ags/`中，其中有一个引用的css文件`colors-waybar.css`同样需要转移。
+之后将JaKooLit的AGS设置复制到`~/.config/ags/`中，其中有一个引用的css文件`colors-waybar.css`同样需要转移，并修改预览的背景图。
 
-不要忘记添加至自动启动：
+```css
+...
+@import './colors-waybar.css';
+...
+.overview-tasks-workspace {
+...
+  background-image: url('/home/coinhere/Pictures/myWallpapers/haibara-ai.jpg');
+...
+}
+...
+```
+
+添加快捷键：
 
 ```conf
-exec-once = ags
+bind = $mainMod, Tab, exec, pkill rofi || true && ags -t 'overview' # ags workspace overview
 ```
 
 ### 动态壁纸
@@ -1339,10 +1355,54 @@ mpvpaper详细参数意义见`man mpvpaper`，mpv详细设置见<https://mpv.io/
 - `"*"` -- 显示在所有屏幕上
 - `/home/Video/Wallpapers` -- # 播放的可以是视频文件或者包含视频文件的文件夹
 
-此外，还需要将启动壁纸的程序注释掉，以免视频桌面被覆盖，在`~/.config/hypr/hyprland.conf`：
+参数过多，可以设置mpv配置文件，再引用配置文件`~/.config/mpv/mpv.conf`，详细见<https://mpv.io/manual/master/#configuration-files>：
 
 ```conf
-# exec-once = $scrPath/swwwallpaper.sh # start wallpaper daemon
+[mpvpaper]
+profile-desc="profile for mpvpaper"
+vo=gpu-next
+gpu-api=auto
+hwdec=auto-safe
+profile=fast
+input-ipc-server=/tmp/mpv-socket
+shuffle
+loop
+loop-playlist
+panscan=1.0
+osd-level=0
+```
+
+```conf
+exec-once = mpvpaper -f -n 7200 -o "profile=mpvpaper" "*" /home/Videos/Wallpapers
+```
+
+#### 设置mpvpaper桌面图层排序
+
+此外，为避免视频桌面被其他桌面程序覆盖(HyDE中是swww-daemon)，可以设置mpvpaper的layer优先度最低，或者直接不启动其他桌面程序：
+
+```conf
+layerrule = order -1, mpvpaper
+```
+
+#### 自动暂停、禁音
+
+mpvpaper提供`--auto-pause`和`--auto-stop`的参数，但在hyprland中没有效果，因此自己写了两个脚本：
+
+- [auto_pause_mute_mpvpaper.sh](https://gist.github.com/coinhere/b97695322f9079a2178bb55120f2a795)，作用是：
+  - 工作区窗口数量由0变为1时静音，由1变为0时取消静音
+  - 窗口全屏时（非最大化）暂停，退出全屏时取消暂停
+  - 切换工作区后，根据工作区窗口数量和是否全屏选择禁音、暂停mpvpaper与否
+- [mpvpaper.sh](https://gist.github.com/coinhere/b97695322f9079a2178bb55120f2a795#file-mpvpaper-sh)，作用是：
+  - 启动mpvpaper和auto_pause_mute_mpvpaper.sh
+  - 退出时关闭mpvpaper和auto_pause_mute_mpvpaper.sh
+  - 每隔一秒检测系统是否有其他音频输出，有则将mpvpaper音量降至零
+
+需要开启mpvpaper控制接口，并安装`socat`
+
+记得添加自动启动
+
+```conf
+exec-once = $HOME/.config/hypr/scripts/mpvpaper.sh
 ```
 
 #### 添加控制壁纸快捷键
@@ -1353,44 +1413,71 @@ mpvpaper详细参数意义见`man mpvpaper`，mpv详细设置见<https://mpv.io/
 
 ```conf
 # mpv-paper
+bind = $mainMod, F3, exec, $HOME/.config/hypr/scripts/mpvpaper.sh # 启动mpvpaper及相关进程
+bind = $mainMod, F4, exec, kill $(pgrep -f mpvpaper.sh) # 关闭mpvpaper及相关进程
 bind = $mainMod, F5, exec, echo 'cycle mute' | socat - /tmp/mpv-socket # 静音/取消静音
 bind = $mainMod, F6, exec, echo 'playlist-prev' | socat - /tmp/mpv-socket # 播放上一个
 bind = $mainMod, F7, exec, echo 'cycle pause' | socat - /tmp/mpv-socket # 暂停/取消暂停
 bind = $mainMod, F8, exec, echo 'playlist-next' | socat - /tmp/mpv-socket # 播放下一个
 ```
 
-#### 自动暂停、禁音
+### 锁屏、自动锁屏
 
-mpvpaper提供`--auto-pause`和`--auto-stop`的参数，但在hyprland中没有效果，因此自己写了个脚本，见<https://gist.github.com/coinhere/b97695322f9079a2178bb55120f2a795>
+HyDE默认使用swaylock锁屏，这里选用hyprlock
 
-作用是：
-
-- 工作区存在窗口时静音
-- 窗口全屏时（非最大化）暂停
-
-需要开启mpvpaper控制接口，并安装`socat`
-
-记得添加自动启动
-
-```conf
-exec-once = $HOME/.config/hypr/scripts/auto_pause_mute_mpvpaper.sh
-```
-
-### 自动锁屏、关闭屏幕
-
-下载[hypridle](https://wiki.hyprland.org/Hypr-Ecosystem/hypridle/)
+下载[hyprlock](https://wiki.hyprland.org/Hypr-Ecosystem/hyprlock/)
 
 ```bash
-sudo pacman -S hypridle
+sudo pacman -S hypridle hyprlock
 ```
 
-创建`~/.config/hypr/hypridle.conf`并添加：
+#### hyprlock配置
 
-黑屏时自动停止mpv-paper
+使用的[MrVivekRajan的hyprlock配置](https://github.com/MrVivekRajan/Hyprlock-Styles)
+
+#### 自动退出、启动动态壁纸
+
+hyprlock锁屏时，动态壁纸还会运行，因此写了个脚本锁屏时退出mpvpaper，解锁时再打开mpvpaper，这里使用上面脚本启动mpvpaper：
+
+```bash
+#!/bin/bash
+
+lock() {
+  # avoid starting multiple hyprlock instances.
+  if ! pidof hyprlock >/dev/null; then
+    # quit mpvpaper script
+    kill -SIGTERM $(pgrep -f mpvpaper.sh)
+    # when unlock, restart mpvpaper
+    hyprlock && lock_hook
+  fi
+}
+
+lock_hook() {
+  # run mpvpaper again
+  if ! pidof mpvpaper >/dev/null; then
+    ~/.config/hypr/scripts/mpvpaper.sh
+  fi
+}
+
+lock
+```
+
+更改键位：
+
+```conf
+bind = Ctrl+Alt, L, exec, $HOME/.config/hypr/scripts/lock.sh # launch lock screen
+```
+
+#### 设置空闲时自动锁屏
+
+hypridle是Hyprland的一个空闲daemon。空闲时自动计时，到达设定的触发器的时间便会执行触发器的命令。
+
+这里使用的hyprland官方文档中的配置: [hypridle](https://wiki.hyprland.org/Hypr-Ecosystem/hypridle/)
+创建`~/.config/hypr/hypridle.conf`并添加：
 
 ```conf
 general {
-    lock_cmd = pidof swaylock || swaylock       # avoid starting multiple hyprlock instances.
+    lock_cmd = $HOME/.config/hypr/scripts/lock.sh
     before_sleep_cmd = loginctl lock-session    # lock before suspend.
     after_sleep_cmd = hyprctl dispatch dpms on  # to avoid having to press a key twice to turn on the display.
 }
@@ -1415,8 +1502,8 @@ listener {
 
 listener {
     timeout = 330                                 # 5.5min
-    on-timeout = echo 'set pause yes' | socat - /tmp/mpv-socket && hyprctl dispatch dpms off        # screen off when timeout has passed
-    on-resume = hyprctl dispatch dpms on && echo 'set pause no' | socat - /tmp/mpv-socket         # screen on when activity is detected after timeout has fired.
+    on-timeout = hyprctl dispatch dpms off        # screen off when timeout has passed
+    on-resume = hyprctl dispatch dpms on          # screen on when activity is detected after timeout has fired.
 }
 
 listener {
