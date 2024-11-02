@@ -600,6 +600,12 @@ xdg-settings set default-web-browser firefox.desktop
 
 > Open the browser >> navigate chrome://flags/ >> search for Preferred Ozone platform >> Select wayland
 
+#### 类neovide光标拖尾特效
+
+```conf
+cursor_trail 3
+```
+
 ### neovim
 
 #### neovim配置
@@ -656,25 +662,56 @@ end
 
 创建并添加`~/.config/nvim/lua/plugins/colorscheme.lua`:
 
+添加的几种主题是为了适配不同的HyDE主题
+
 ```lua
 return {
-  {
-    "folke/tokyonight.nvim",
-    opts = { style = "storm" },
-  },
   { "rose-pine/neovim", name = "rose-pine" },
   { "EdenEast/nightfox.nvim" },
-  { "catppuccin/nvim", opts = { term_colors = true, dim_inactive = { enabled = true } } }, # term_colors保证neovide内置terminal色彩正确
+  { "sainnhe/gruvbox-material" },
+  { "catppuccin/nvim", opts = { term_colors = true, dim_inactive = { enabled = true } } }, -- 设置term_colors避免neovide中内置terminal颜色不对
   {
     "LazyVim/LazyVim",
     opts = {
-      -- colorscheme = "nordfox",
-      -- colorscheme = "rose-pine",
-      colorscheme = "catppuccin",
+   colorscheme = "catppuccin-mocha",
     },
   },
 }
 ```
+
+#### HyDE切换主题时自动切换neovim的主题
+
+`Super`+`Shit`+`T`切换HyDE主题时，hyprland、waybar、kitty、kvantu、rofi、gtk的主题也会同时切换，但neovim的主题不会，因此需要手动更改neovim主题，不然会与终端主题十分割裂
+
+见github上的讨论<https://github.com/prasanthrangan/hyprdots/issues/1225>
+
+ChatGPT帮我写了一个脚本，用于切换HyDE主题时，同时切换neovim主题，见<https://gist.github.com/coinhere/63bcab29bdabec1ec6b6c8ab263fa058>
+
+##### 工作原理
+
+- 切换HyDE主题时，从stdout输出中获取切换后的主题名字
+- 将主题对应上neovim的主题名字后，替换neovim主题配置文件中的*设定主题一行*，以永久切换主题
+- 通过`pynvim`发送切换主题的命令给所有的neovim实例，以实时切换主题
+
+##### 注意事项
+
+- 没有为HyDE上的所有主题给出了对应的neovim主题（除部分外其余均使用默认主题），你可以自行添加或修改对应的neovim主题
+
+- 这里使用`LazyVim`的配置，创建的neovim主题配置文件为`~/.config/nvim/lua/plugins/colorscheme.lua`，更换neovim主题只需替换`colorscheme`一行：
+
+```lua
+  {
+        "LazyVim/LazyVim",
+        opts = {
+          colorscheme = "catppuccin-mocha",
+        },
+      },
+```
+
+你可能需要根据自己的配置文件，修改替换文件这部分代码
+
+- 脚本使用`pynvim`给nvim实例发送命令，需要提前安装这个python包
+- 这里系统上nvim实例默认的socket路径皆在"/run/user/1000"，可以在nvim中运行`:echo v:servername`查看监听路径，你可能需要修改代码中的对应路径，以防脚本找不到所有nvim实例的接口
 
 #### Leetcode neovim
 
@@ -1139,27 +1176,36 @@ waybar配置文件为`~/.config/waybar/config.jsonc`，HyDE中该文件是根据
 
 ```jsonc
     "mpris": {
-          "format": "{player_icon} {dynamic}",
-          "rotate": "${r_deg}",
-          "format-paused": "{status_icon} <i>{dynamic}</i>",
-          "player-icons": {
-                "default": "▶",
-            "mpv": "🎵"
-              },
-          "status-icons": {
-                "paused": ""
-              },
-          "ignored-players": ["firefox"]
-          // "max-length": 1000,
-          "interval": 1,
-          "dynamic-order": [
-                "title",
-                "artist",
-                // "album",
-                "position",
-                "length"
-              ]
-            },
+      "format": "{player_icon} {dynamic}",
+      "rotate": "${r_deg}",
+      "format-paused": "{status_icon} <i>{dynamic}</i>",
+      "player-icons": {
+        "default": "▶",
+        "mpv": "🎵"
+      },
+      "status-icons": {
+        "paused": ""
+      },
+      "ignored-players": [
+        "firefox"
+      ],
+      "max-length": 50,
+      "interval": 1,
+      "dynamic-order": [
+        "title",
+        "artist",
+        // "album",
+        "position",
+        "length"
+      ],
+      "dynamic-importance-order": [
+        "title",
+        "position",
+        "length",
+        "artist",
+        "album"
+      ]
+    },
 ```
 
 ##### wlr/taskbar
