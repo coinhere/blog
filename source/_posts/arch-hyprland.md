@@ -1234,9 +1234,11 @@ waybar_cava_bar="🌑🌒🌓🌔🌕🌖🌗🌘"
 
 ```jsonc
     "custom/lx_lyrics": {
-          "exec": "~/.config/waybar/scripts/lx_lyrics.sh",
-          "format": " {}",
-        },
+      "exec": "~/.config/waybar/scripts/lx_lyrics.sh && echo ''",
+      "exec-if": "pgrep lx-music",
+      "restart-interval": 1,
+      "format": " {}",
+    },
 ```
 
 `~/.config/waybar/scripts/lx_lyrics.sh`
