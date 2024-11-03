@@ -1037,7 +1037,7 @@ waybar配置文件为`~/.config/waybar/config.jsonc`，HyDE中该文件是根据
 我的设置为：
 
 ```conf
-1|31|top|( custom/power custom/cliphist custom/wallchange ) ( group/hardware network ) ( custom/cava mpris )|( hyprland/workspaces wlr/taskbar )|( pulseaudio pulseaudio#microphone backlight custom/updates ) ( privacy tray battery ) ( idle_inhibitor clock )
+1|31|top|( custom/power custom/cliphist custom/theme custom/wallchange custom/updates ) ( group/hardware network ) ( custom/cava custom/lx_lyrics )|( hyprland/workspaces wlr/taskbar )|( mpris pulseaudio pulseaudio#microphone backlight ) ( tray battery ) ( idle_inhibitor clock )
 ```
 
 {% asset_img waybar.png 分区示例 %}
@@ -1045,6 +1045,23 @@ waybar配置文件为`~/.config/waybar/config.jsonc`，HyDE中该文件是根据
 #### waybar module修改
 
 微调了几个waybar的module:
+
+##### custom/theme
+
+给切换主题的命令加上了自动切换nvim主题的脚本，见[脚本](#HyDE切换主题时自动切换neovim的主题)
+
+```jsonc
+    "custom/theme": {
+          "format": "{}",
+          "rotate": "${r_deg}",
+          "exec": "echo ; echo 󰟡 switch theme",
+          "on-click": "themeswitch.sh -n | python3 $HOME/.config/hypr/scripts/change_nvim_colorscheme.py",
+          "on-click-right": "themeswitch.sh -p | python3 $HOME/.config/hypr/scripts/change_nvim_colorscheme.py",
+          "on-click-middle": "sleep 0.1 && themeselect.sh | python3 $HOME/.config/hypr/scripts/change_nvim_colorscheme.py",
+          "interval": 86400, // once every day
+          "tooltip": true
+          },
+```
 
 ##### custom/wallchange
 
@@ -1168,76 +1185,6 @@ waybar配置文件为`~/.config/waybar/config.jsonc`，HyDE中该文件是根据
         },
 ```
 
-##### mpris
-
-显示并可控制当前播放的音频
-
-简单去掉了"album"，因为太长了:
-
-```jsonc
-    "mpris": {
-      "format": "{player_icon} {dynamic}",
-      "rotate": "${r_deg}",
-      "format-paused": "{status_icon} <i>{dynamic}</i>",
-      "player-icons": {
-        "default": "▶",
-        "mpv": "🎵"
-      },
-      "status-icons": {
-        "paused": ""
-      },
-      "ignored-players": [
-        "firefox"
-      ],
-      "max-length": 50,
-      "interval": 1,
-      "dynamic-order": [
-        "title",
-        "artist",
-        // "album",
-        "position",
-        "length"
-      ],
-      "dynamic-importance-order": [
-        "title",
-        "position",
-        "length",
-        "artist",
-        "album"
-      ]
-    },
-```
-
-##### wlr/taskbar
-
-显示所有窗口的图标，点击会切换该窗口的工作区并聚焦其上
-
-将两个scratchpad加入了忽略名单中，避免干扰正常窗口：
-
-```jsonc
-  "wlr/taskbar": {
-      "format": "{icon}",
-      "rotate": "${r_deg}",
-      "icon-size": "${i_task}",
-      "icon-theme": "${i_theme}",
-      "spacing": 0,
-      "tooltip-format": "{title}",
-      "on-click": "activate",
-      "on-click-middle": "close",
-      "ignore-list": [
-            "Alacritty",
-            "kitty-dropterm",
-            "kitty-btop"
-          ],
-      "app_ids-mapping": {
-            "firefoxdeveloperedition": "firefox-developer-edition",
-        "jetbrains-datagrip": "DataGrip"
-          }
-        },
-```
-
-注意需要正确设置这两个应用的`title`，见[dropterm](#hyprland-drop-down-terminal), [dropbtop](#设置下拉式btop窗口，方便随时查看)
-
 ##### cava module设置
 
 该模组在waybar上可视化显示音乐频率
@@ -1271,6 +1218,107 @@ waybar_cava_bar="🌑🌒🌓🌔🌕🌖🌗🌘"
 # waybar_cava_bar="★☆★☆★☆★☆"
 # waybar_cava_bar="⣾⣽⣻⢿⡿⣟⣯⣷"
 # waybar_cava_bar="ᗧᗣᗤᗥᗦᗧᗣᗤᗥᗦ"
+```
+
+##### custom/lx_lyrics
+
+需配合[洛雪音乐](https://github.com/lyswhut/lx-music-desktop)一起使用，目前仅支持落雪音乐。
+
+开启洛雪音乐的[API](https://lxmusic.toside.cn/desktop/open-api)后，播放音乐时显示歌词在waybar上，需安装curl命令。
+
+{% asset_img lx_lyrics.png 分区示例 %}
+
+代码非常简单:
+
+`~/.config/waybar/modules/lx_lyrics.jsonc`
+
+```jsonc
+    "custom/lx_lyrics": {
+          "exec": "~/.config/waybar/scripts/lx_lyrics.sh",
+          "format": " {}",
+        },
+```
+
+`~/.config/waybar/scripts/lx_lyrics.sh`
+
+```bash
+#!/bin/bash
+
+curl -s -N "http://127.0.0.1:23330/subscribe-player-status?filter=lyricLineText" | while read -r line; do
+  if [[ $line == data:* ]]; then
+    echo "${line#data: }" | tr -d '"' | xargs
+  fi
+done
+```
+
+##### wlr/taskbar
+
+显示所有窗口的图标，点击会切换该窗口的工作区并聚焦其上
+
+将两个scratchpad加入了忽略名单中，避免干扰正常窗口：
+
+```jsonc
+  "wlr/taskbar": {
+      "format": "{icon}",
+      "rotate": "${r_deg}",
+      "icon-size": "${i_task}",
+      "icon-theme": "${i_theme}",
+      "spacing": 0,
+      "tooltip-format": "{title}",
+      "on-click": "activate",
+      "on-click-middle": "close",
+      "ignore-list": [
+            "Alacritty",
+            "kitty-dropterm",
+            "kitty-btop"
+          ],
+      "app_ids-mapping": {
+            "firefoxdeveloperedition": "firefox-developer-edition",
+        "jetbrains-datagrip": "DataGrip"
+          }
+        },
+```
+
+注意需要正确设置这两个应用的`title`，见[dropterm](#hyprland-drop-down-terminal), [dropbtop](#设置下拉式btop窗口，方便随时查看)
+
+##### mpris
+
+显示并可控制当前播放的音频
+
+简单去掉了一些信息，因为太长了:
+
+```jsonc
+    "mpris": {
+      "format": "{player_icon} {dynamic}",
+      "rotate": "${r_deg}",
+      "format-paused": "{status_icon} <i>{dynamic}</i>",
+      "player-icons": {
+        "default": "▶",
+        "mpv": "🎵"
+      },
+      "status-icons": {
+        "paused": ""
+      },
+      "ignored-players": [
+        "firefox"
+      ],
+      "max-length": 50,
+      "interval": 1,
+      "dynamic-order": [
+        "title",
+        // "artist",
+        // "album",
+        "position",
+        "length"
+      ],
+      "dynamic-importance-order": [
+        "position",
+        "length",
+        "title",
+        "artist",
+        "album"
+      ]
+    },
 ```
 
 ### HyDE更新覆盖设置
