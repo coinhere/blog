@@ -208,15 +208,6 @@ chsh -l # 查看安装了哪些 Shell
 chsh -s /usr/bin/fish # 修改当前账户的默认 Shell 为fish
 ```
 
-更改fish编辑器，在`~/.config/fish/config.fish`中添加下一行:
-
-见<https://fishshell.com/docs/current/language.html#exporting-variables>
-
-```fish
-set -gx EDITOR nvim
-set -gx MANPAGER 'nvim +Man!' # 使用nvim来查看man-pages，自动高亮
-```
-
 #### 开启 32 位支持库与 Arch Linux 中文社区仓库
 
 修改`/etc/pacman.conf`：
@@ -470,8 +461,6 @@ sudo keyd reload
 
 ### fish shell
 
-开箱即用，无需配置
-
 安装并更改用户默认shell:
 
 ```bash
@@ -479,6 +468,99 @@ sudo pacman -S fish
 chsh -l # 查看安装了哪些 Shell
 chsh -s /usr/bin/fish # 修改当前账户的默认 Shell
 ```
+
+更改fish编辑器，在`~/.config/fish/config.fish`中添加下一行:
+
+见<https://fishshell.com/docs/current/language.html#exporting-variables>
+
+```fish
+set -gx EDITOR nvim
+set -gx MANPAGER 'nvim +Man!' # 使用nvim来查看man-pages，自动高亮
+```
+
+#### prompt -- starship
+
+HyDE为fish自动安装并启用[starship](https://github.com/starship/starship)
+
+配置`~/.config/starship.toml`:
+
+```toml
+[directory]
+fish_style_pwd_dir_length = 1
+```
+
+#### 插件
+
+插件管理器使用[Fisher](https://github.com/jorgebucaran/fisher):
+
+安装Fisher：
+
+```fish
+curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher install jorgebucaran/fisher
+```
+
+推荐插件：
+
+- [fzf-fish](https://github.com/PatrickF1/fzf.fish) -- Fzf plugin for Fish
+- [autopair](https://github.com/jorgebucaran/autopair.fish)
+- [plugin-git](https://github.com/jhillyerd/plugin-git) -- Git aliases plugin for the Fish shell (similar to oh-my-zsh git)
+- [fish-abbreviation-tips](https://github.com/gazorby/fish-abbreviation-tips?tab=readme-ov-file) -- Help you remembering your abbreviations
+- [puffer-fish](https://github.com/nickeb96/puffer-fish) -- Text Expansions for Fish (.. for ../.. and !! for the previous cmd, etc)
+
+为`fzf-fish`使用catppuccin主题:<https://github.com/catppuccin/fzf>
+
+`bat`:<https://github.com/catppuccin/bat>
+
+#### zoxide 快捷跳转
+
+```bash
+sudo pacman -S zoxide
+```
+
+将下行加入到`~/.config/fish/config.fish`--仅用于`fish shell`:
+
+`--cmd cd`用`cd`替换`z`，`cdi`替换`zi`
+
+```fish
+zoxide init --cmd cd fish | source # start zoxide and replace with `cd`
+```
+
+#### yazi 终端文件系统
+
+查看安装指南，安装其他拓展：<https://yazi-rs.github.io/docs/installation/>
+
+- nerd-fonts (recommended)
+- ffmpegthumbnailer (for video thumbnails)
+- 7-Zip (for archive extraction and preview)
+- jq (for JSON preview)
+- poppler (for PDF preview)
+- fd (for file searching)
+- rg (for file content searching)
+- fzf (for quick file subtree navigation)
+- zoxide (for historical directories navigation)
+- ImageMagick (for SVG, Font, HEIC, and JPEG XL preview)
+- xclip / wl-clipboard / xsel (for system clipboard support)
+
+```bash
+sudo pacman -S yazi ffmpegthumbnailer p7zip jq poppler fd ripgrep fzf zoxide imagemagick
+```
+
+添加Shell wrapper以便yazi能够更改当前目录
+
+创建文件`~/.config/fish/functions/y.fish`并添加：
+
+```fish
+function y
+ set tmp (mktemp -t "yazi-cwd.XXXXXX")
+ yazi $argv --cwd-file="$tmp"
+ if set cwd (command cat -- "$tmp"); and [ -n "$cwd" ]; and [ "$cwd" != "$PWD" ]
+  builtin cd -- "$cwd"
+ end
+ rm -f -- "$tmp"
+end
+```
+
+更改主题，见<https://github.com/yazi-rs/flavors?tab=readme-ov-file>
 
 ### timeshift备份
 
@@ -599,6 +681,14 @@ xdg-settings set default-web-browser firefox.desktop
 或者：
 
 > Open the browser >> navigate chrome://flags/ >> search for Preferred Ozone platform >> Select wayland
+
+以及：
+
+```bash
+flatpak uninstall Brave
+```
+
+并在`~/HyDE/Scripts/.extra/custom_flat.lst`修改HyDE自动安装的flatpak包
 
 #### 类neovide光标拖尾特效
 
@@ -806,6 +896,18 @@ return {
 
 ### Firefox
 
+#### 取消触摸板滑动惯性
+
+触摸板滑动后页面仍然会滑动直至速度降为0，就像有惯性一样。
+
+实际效果经常是，两根手指稍微动了1毫米，页面直接滑到底了。
+
+降低滑动速度只能稍微减缓症状，索性直接禁止了。
+
+在`about:config`将`apz.gtk.kinetic_scroll.enabled`改为false
+
+同时将`mousewheel.default.delta_multiplier_y`改为50
+
 #### firefox字体
 
 Hyprlan默认的字体有些奇怪，这里修改字体设置。需要安装Windows字体。
@@ -874,58 +976,7 @@ exec-once = openrgb --profile "your-profile-name"
 npm config set registry=https://registry.npmmirror.com # 最新淘宝源
 ```
 
-### 其他有用工具
-
-#### yazi 终端文件系统
-
-查看安装指南，安装其他拓展：<https://yazi-rs.github.io/docs/installation/>
-
-- nerd-fonts (recommended)
-- ffmpegthumbnailer (for video thumbnails)
-- 7-Zip (for archive extraction and preview)
-- jq (for JSON preview)
-- poppler (for PDF preview)
-- fd (for file searching)
-- rg (for file content searching)
-- fzf (for quick file subtree navigation)
-- zoxide (for historical directories navigation)
-- ImageMagick (for SVG, Font, HEIC, and JPEG XL preview)
-- xclip / wl-clipboard / xsel (for system clipboard support)
-
-```bash
-sudo pacman -S yazi ffmpegthumbnailer p7zip jq poppler fd ripgrep fzf zoxide imagemagick
-```
-
-添加Shell wrapper以便yazi能够更改当前目录
-
-```fish
-function y
- set tmp (mktemp -t "yazi-cwd.XXXXXX")
- yazi $argv --cwd-file="$tmp"
- if set cwd (command cat -- "$tmp"); and [ -n "$cwd" ]; and [ "$cwd" != "$PWD" ]
-  builtin cd -- "$cwd"
- end
- rm -f -- "$tmp"
-end
-```
-
-更改主题，见<https://github.com/yazi-rs/flavors?tab=readme-ov-file>
-
-#### zoxide 快捷跳转
-
-```bash
-sudo pacman -S zoxide
-```
-
-将下行加入到`~/.config/fish/config.fish`--仅用于`fish shell`:
-
-`--cmd cd`用`cd`替换`z`，`cdi`替换`zi`
-
-```fish
-zoxide init --cmd cd fish | source # start zoxide and replace with `cd`
-```
-
-#### btop 类似任务管理器
+### btop 类似任务管理器
 
 ```bash
 sudo pacman -S btop
@@ -1037,7 +1088,7 @@ waybar配置文件为`~/.config/waybar/config.jsonc`，HyDE中该文件是根据
 我的设置为：
 
 ```conf
-1|31|top|( custom/power custom/cliphist custom/theme custom/wallchange custom/updates ) ( group/hardware network ) ( custom/cava custom/lx_lyrics )|( hyprland/workspaces wlr/taskbar )|( mpris pulseaudio pulseaudio#microphone backlight ) ( tray battery ) ( idle_inhibitor clock )
+1|31|top|( idle_inhibitor clock ) ( network group/hardware battery ) ( custom/cava custom/lx_lyrics )|( hyprland/workspaces wlr/taskbar )|( mpris pulseaudio pulseaudio#microphone backlight ) ( tray ) ( custom/updates custom/cliphist custom/theme custom/wallchange custom/power )
 ```
 
 {% asset_img waybar.png 分区示例 %}
@@ -1295,11 +1346,11 @@ done
       "rotate": "${r_deg}",
       "format-paused": "{status_icon} <i>{dynamic}</i>",
       "player-icons": {
-        "default": "▶",
+        "default": "",
         "mpv": "🎵"
       },
       "status-icons": {
-        "paused": ""
+        "paused": "▶"
       },
       "ignored-players": [
         "firefox"
@@ -1342,7 +1393,8 @@ N|Y|${HOME}/.config|fish/config.fish|fish
 Y|Y|${HOME}/.config/kitty|theme.conf|kitty
 N|Y|${HOME}/.config/kitty|kitty.conf|kitty
 Y|Y|${HOME}/.config/waybar|config.jsonc style.css theme.css|waybar
-N|Y|${HOME}/.config/waybar|config.ctl modules|waybar
+N|Y|${HOME}/.config/waybar|config.ctl|waybar
+N|Y|${HOME}/.config/waybar/modules|theme.jsonc wallchange.jsonc hardware.jsonc lx_lyrics.jsonc taskbar.jsonc mpris.jsonc|waybar
 ```
 
 ### SDDM theme
