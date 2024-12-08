@@ -499,7 +499,7 @@ fish_style_pwd_dir_length = 1
 curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher install jorgebucaran/fisher
 ```
 
-推荐插件：
+推荐插件，主要推荐fzf-fish：
 
 - [fzf-fish](https://github.com/PatrickF1/fzf.fish) -- Fzf plugin for Fish
 - [autopair](https://github.com/jorgebucaran/autopair.fish)
@@ -507,9 +507,18 @@ curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fi
 - [fish-abbreviation-tips](https://github.com/gazorby/fish-abbreviation-tips?tab=readme-ov-file) -- Help you remembering your abbreviations
 - [puffer-fish](https://github.com/nickeb96/puffer-fish) -- Text Expansions for Fish (.. for ../.. and !! for the previous cmd, etc)
 
+##### fzf-fish配置
+
 为`fzf-fish`使用catppuccin主题:<https://github.com/catppuccin/fzf>
 
-`bat`:<https://github.com/catppuccin/bat>
+fzf-fish使用`bat`预览代码，更换bat高亮主题为catppuccin:<https://github.com/catppuccin/bat>
+
+```fish
+# fzf-fish
+# ctrl+O 用EDITOR打开文件，ctrl-d显示目录, ctrl-h显示隐藏，ctrl-f恢复
+set fzf_directory_opts "--bind=ctrl-o:execute($EDITOR {} &> /dev/tty),ctrl-d:reload(fd --color=always --type directory),ctrl-h:reload(fd --color=always --hidden),ctrl-f:reload(fd --color=always)"
+set fzf_preview_dir_cmd eza -lha --icons=auto --sort=name --group-directories-first --color=always # 用eza显示目录信息
+```
 
 #### zoxide 快捷跳转
 
@@ -803,6 +812,50 @@ ChatGPT帮我写了一个脚本，用于切换HyDE主题时，同时切换neovim
 - 脚本使用`pynvim`给nvim实例发送命令，需要提前安装这个python包
 - 这里系统上nvim实例默认的socket路径皆在"/run/user/1000"，可以在nvim中运行`:echo v:servername`查看监听路径，你可能需要修改代码中的对应路径，以防脚本找不到所有nvim实例的接口
 
+#### cmp-cmdline
+
+neovim内命令及搜索自动补全，见[cmp-cmdline](https://github.com/hrsh7th/cmp-cmdline):
+
+```lua
+return {
+    {
+      "hrsh7th/cmp-cmdline",
+      config = function()
+        local cmp = require("cmp")
+        -- `/` cmdline setup.
+        cmp.setup.cmdline("/", {
+          mapping = cmp.mapping.preset.cmdline({
+            ["<C-f>"] = {
+              c = cmp.mapping.confirm({ select = false }),
+            },
+          }),
+          sources = {
+            { name = "buffer" },
+          },
+        })
+        -- `:` cmdline setup.
+        cmp.setup.cmdline(":", {
+          mapping = cmp.mapping.preset.cmdline({
+            ["<C-f>"] = {
+              c = cmp.mapping.confirm({ select = false }),
+            },
+          }),
+          sources = cmp.config.sources({
+            { name = "path" },
+          }, {
+            {
+              name = "cmdline",
+              option = {
+                ignore_cmds = { "Man", "!" },
+              },
+            },
+          }),
+        })
+      end,
+    },
+}
+```
+
 #### Leetcode neovim
 
 在neovim中刷Leetcode，见<https://github.com/kawre/leetcode.nvim>:
@@ -857,6 +910,21 @@ return {
         translator = false, ---@type boolean
         translate_problems = false, ---@type boolean
       },
+      hooks = { -- avoid window duplication due to winfixbuf
+        ---@type fun()[]
+        ["enter"] = {
+          function()
+            vim.wo.winfixbuf = false
+          end,
+        },
+
+        ---@type fun(question: lc.ui.Question)[]
+        ["question_enter"] = {
+          function()
+            vim.wo.winfixbuf = false
+          end,
+        },
+      },
     },
     keys = {
       { "<leader>l", false }, -- disable <leader>l for :Lazy
@@ -905,8 +973,6 @@ return {
 降低滑动速度只能稍微减缓症状，索性直接禁止了。
 
 在`about:config`将`apz.gtk.kinetic_scroll.enabled`改为false
-
-同时将`mousewheel.default.delta_multiplier_y`改为50
 
 #### firefox字体
 
@@ -1370,7 +1436,8 @@ done
         "title",
         "artist",
         "album"
-      ]
+      ],
+      "tooltip-format": "{title} - {album}\nartist {artist}({player})"
     },
 ```
 
