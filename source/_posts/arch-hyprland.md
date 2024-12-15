@@ -768,11 +768,12 @@ return {
   { "rose-pine/neovim", name = "rose-pine" },
   { "EdenEast/nightfox.nvim" },
   { "sainnhe/gruvbox-material" },
-  { "catppuccin/nvim", opts = { term_colors = true, dim_inactive = { enabled = true } } }, -- 设置term_colors避免neovide中内置terminal颜色不对
+  -- 设置term_colors避免neovide中内置terminal颜色不对
+  { "catppuccin/nvim", name = "catppuccin", opts = { term_colors = true, dim_inactive = { enabled = true } } },
   {
     "LazyVim/LazyVim",
     opts = {
-   colorscheme = "catppuccin-mocha",
+      colorscheme = "catppuccin-mocha",
     },
   },
 }
