@@ -1155,7 +1155,7 @@ waybar配置文件为`~/.config/waybar/config.jsonc`，HyDE中该文件是根据
 我的设置为：
 
 ```conf
-1|31|top|( idle_inhibitor clock ) ( network group/hardware battery ) ( custom/cava custom/lx_lyrics )|( hyprland/workspaces wlr/taskbar )|( mpris pulseaudio pulseaudio#microphone backlight ) ( tray ) ( custom/updates custom/cliphist custom/theme custom/wallchange custom/power )
+1|31|top|( idle_inhibitor clock ) ( network group/hardware battery ) ( custom/cava custom/lyrics )|( hyprland/workspaces wlr/taskbar )|( mpris pulseaudio pulseaudio#microphone backlight ) ( tray ) ( custom/updates custom/cliphist custom/theme custom/wallchange custom/power )
 ```
 
 {% asset_img waybar.png 分区示例 %}
@@ -1338,38 +1338,23 @@ waybar_cava_bar="🌑🌒🌓🌔🌕🌖🌗🌘"
 # waybar_cava_bar="ᗧᗣᗤᗥᗦᗧᗣᗤᗥᗦ"
 ```
 
-##### custom/lx_lyrics
+##### custom/lyrics
 
-需配合[洛雪音乐](https://github.com/lyswhut/lx-music-desktop)一起使用，目前仅支持落雪音乐。
+需配合[洛雪音乐](https://github.com/lyswhut/lx-music-desktop)一起使用，目前支持落雪音乐和Spotify。
 
 开启洛雪音乐的[API](https://lxmusic.toside.cn/desktop/open-api)后，播放音乐时显示歌词在waybar上，需安装curl命令。
+
+还需要安装[sptlrx](https://github.com/raitonoberu/sptlrx)，用于获取Spotify歌词，需要配置Spotify的Cookie。
+
+```fish
+yay -S curl sptlrx-bin
+```
 
 {% asset_img lx_lyrics.png 分区示例 %}
 
 代码非常简单:
 
-`~/.config/waybar/modules/lx_lyrics.jsonc`
-
-```jsonc
-    "custom/lx_lyrics": {
-      "exec": "~/.config/waybar/scripts/lx_lyrics.sh && echo ''",
-      "exec-if": "pgrep lx-music",
-      "restart-interval": 1,
-      "format": " {}",
-    },
-```
-
-`~/.config/waybar/scripts/lx_lyrics.sh`
-
-```bash
-#!/bin/bash
-
-curl -s -N "http://127.0.0.1:23330/subscribe-player-status?filter=lyricLineText" | while read -r line; do
-  if [[ $line == data:* ]]; then
-    echo "${line#data: }" | tr -d '"' | xargs
-  fi
-done
-```
+见：<https://gist.github.com/coinhere/5c32ddf615574a5565ac83301c42ec64>
 
 ##### wlr/taskbar
 
