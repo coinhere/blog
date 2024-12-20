@@ -1140,8 +1140,8 @@ group {
 
 ```conf
 windowrulev2 = opacity 0.90 0.90,class:^(google-chrome)$
-windowrulev2 = opacity 0.80 0.80,class:^(kitty)|^(neovide)$ # 透明kitty的下拉窗口和neovide
-windowrulev2 = noblur,class:^(kitty)|^(neovide)$,focus:0 # 未锁定的kitty和neovide窗口取消模糊
+windowrulev2 = opacity 0.80 0.80,class:^(kitty)(.*)$|^(neovide)$ # 透明kitty的下拉窗口和neovide
+windowrulev2 = noblur,class:^(kitty)(.*)$|^(neovide)$,focus:0 # 未锁定的kitty和neovide窗口取消模糊
 windowrulev2 = bordercolor rgba(d20f39ff) rgba(fe640bff) 45deg, fullscreen:1 # 最大化窗口时改变边框颜色
 layerrule = order -1, mpvpaper # 避免mpvpaper桌面被覆盖
 ```
@@ -1155,7 +1155,7 @@ waybar配置文件为`~/.config/waybar/config.jsonc`，HyDE中该文件是根据
 我的设置为：
 
 ```conf
-1|31|top|( idle_inhibitor clock ) ( network group/hardware battery ) ( custom/cava custom/lyrics )|( hyprland/workspaces wlr/taskbar )|( mpris pulseaudio pulseaudio#microphone backlight ) ( tray ) ( custom/updates custom/cliphist custom/theme custom/wallchange custom/power )
+1|31|top|( idle_inhibitor clock ) ( network group/hardware battery ) ( custom/cava custom/lyrics )|( hyprland/workspaces wlr/taskbar )|( mpris pulseaudio pulseaudio#microphone backlight ) ( tray ) ( custom/notifications custom/updates custom/cliphist custom/theme custom/wallchange custom/power )
 ```
 
 {% asset_img waybar.png 分区示例 %}
@@ -1211,96 +1211,96 @@ waybar配置文件为`~/.config/waybar/config.jsonc`，HyDE中该文件是根据
 
 ```jsonc
     "group/hardware": {
-          "orientation": "inherit",
-          "drawer": {
-                "transition-duration": 500
-              },
-          "modules": [
-                "cpu",
-                "memory",
-                "custom/cpuinfo",
-                "custom/gpuinfo"
-              ]
-            },
-        "cpu": {
-          "interval": 10,
-          "format": "󰍛 {usage}%",
-          "rotate": "${r_deg}",
-          "format-alt": "{icon0}{icon1}{icon2}{icon3}",
-          "format-icons": [
-                "▁",
-                "▂",
-                "▃",
-                "▄",
-                "▅",
-                "▆",
-                "▇",
-                "█"
-              ]
-            },
-        "memory": {
-          "states": {
-              "c": 90, // critical
-            "h": 60, // high
-            "m": 30, // medium
-          },
-          "interval": 30,
-          "format": "󰾆 {used}GB",
-          "rotate": "${r_deg}",
-          "format-m": "󰾅 {used}GB",
-          "format-h": "󰓅 {used}GB",
-          "format-c": " {used}GB",
-          "format-alt": "󰾆 {percentage}%",
-          "max-length": 10,
-          "tooltip": true,
-          "tooltip-format": "󰾆 {percentage}%\n {used:0.1f}GB/{total:0.1f}GB"
-          },
-        "custom/cpuinfo": {
-          "exec": " cpuinfo.sh",
-          "return-type": "json",
-          "format": "{}",
-          "rotate": "${r_deg}",
-          "interval": 5, // once every 5 seconds
-          "tooltip": true,
-          "max-length": 1000
-          },
-        "custom/gpuinfo": {
-          "exec": " gpuinfo.sh",
-          "return-type": "json",
-          "format": "{}",
-          "rotate": "${r_deg}",
-          "interval": 5, // once every 5 seconds
-          "tooltip": true,
-          "max-length": 1000,
-          "on-click": "gpuinfo.sh --toggle",
-        },
-        "custom/gpuinfo#nvidia": {
-              "exec": " gpuinfo.sh --use nvidia ",
-          "return-type": "json",
-          "format": "{}",
-          "rotate": "${r_deg}",
-          "interval": 5, // once every 5 seconds
-          "tooltip": true,
-          "max-length": 1000,
-        },
-        "custom/gpuinfo#amd": {
-              "exec": " gpuinfo.sh --use amd ",
-          "return-type": "json",
-          "format": "{}",
-          "rotate": "${r_deg}",
-          "interval": 5, // once every 5 seconds
-          "tooltip": true,
-          "max-length": 1000,
-        },
-        "custom/gpuinfo#intel": {
-              "exec": " gpuinfo.sh --use intel ",
-          "return-type": "json",
-          "format": "{}",
-          "rotate": "${r_deg}",
-          "interval": 5, // once every 5 seconds
-          "tooltip": true,
-          "max-length": 1000,
-        },
+      "orientation": "inherit",
+      "drawer": {
+        "transition-duration": 500
+      },
+      "modules": [
+        "cpu",
+        "memory",
+        "custom/cpuinfo",
+        "custom/gpuinfo"
+      ]
+    },
+    "cpu": {
+      "interval": 10,
+      "format": "󰍛 {usage}%",
+      "rotate": "${r_deg}",
+      "format-alt": "{icon0}{icon1}{icon2}{icon3}",
+      "format-icons": [
+        "▁",
+        "▂",
+        "▃",
+        "▄",
+        "▅",
+        "▆",
+        "▇",
+        "█"
+      ]
+    },
+    "memory": {
+      "states": {
+        "c": 90, // critical
+        "h": 60, // high
+        "m": 30, // medium
+      },
+      "interval": 30,
+      "format": "󰾆 {used}GB",
+      "rotate": "${r_deg}",
+      "format-m": "󰾅 {used}GB",
+      "format-h": "󰓅 {used}GB",
+      "format-c": " {used}GB",
+      "format-alt": "󰾆 {percentage}%",
+      "max-length": 10,
+      "tooltip": true,
+      "tooltip-format": "󰾆 {percentage}%\n {used:0.1f}GB/{total:0.1f}GB"
+    },
+    "custom/cpuinfo": {
+      "exec": "NO_EMOJI=1 cpuinfo.sh",
+      "return-type": "json",
+      "format": "{}",
+      "rotate": "${r_deg}",
+      "restart-interval": 5, // once every 5 seconds
+      "tooltip": true,
+      "max-length": 1000
+    },
+    "custom/gpuinfo": {
+      "exec": "NO_EMOJI=1 gpuinfo.sh",
+      "return-type": "json",
+      "format": "{}",
+      "rotate": "${r_deg}",
+      "interval": 5, // once every 5 seconds
+      "tooltip": true,
+      "max-length": 1000,
+      "on-click": "gpuinfo.sh --toggle",
+    },
+    "custom/gpuinfo#nvidia": {
+      "exec": "NO_EMOJI=1 gpuinfo.sh --use nvidia ",
+      "return-type": "json",
+      "format": "{}",
+      "rotate": "${r_deg}",
+      "interval": 5, // once every 5 seconds
+      "tooltip": true,
+      "max-length": 1000,
+    },
+    "custom/gpuinfo#amd": {
+      "exec": "NO_EMOJI=1 gpuinfo.sh --use amd ",
+      "return-type": "json",
+      "format": "{}",
+      "rotate": "${r_deg}",
+      "interval": 5, // once every 5 seconds
+      "tooltip": true,
+      "max-length": 1000,
+    },
+    "custom/gpuinfo#intel": {
+      "exec": "NO_EMOJI=1 gpuinfo.sh --use intel ",
+      "return-type": "json",
+      "format": "{}",
+      "rotate": "${r_deg}",
+      "interval": 5, // once every 5 seconds
+      "tooltip": true,
+      "max-length": 1000,
+    },
 ```
 
 ##### cava module设置
@@ -1364,24 +1364,24 @@ yay -S curl sptlrx-bin
 
 ```jsonc
   "wlr/taskbar": {
-      "format": "{icon}",
-      "rotate": "${r_deg}",
-      "icon-size": "${i_task}",
-      "icon-theme": "${i_theme}",
-      "spacing": 0,
-      "tooltip-format": "{title}",
-      "on-click": "activate",
-      "on-click-middle": "close",
-      "ignore-list": [
-            "Alacritty",
-            "kitty-dropterm",
-            "kitty-btop"
-          ],
-      "app_ids-mapping": {
-            "firefoxdeveloperedition": "firefox-developer-edition",
-        "jetbrains-datagrip": "DataGrip"
-          }
-        },
+    "format": "{icon}",
+    "rotate": "${r_deg}",
+    "icon-size": "${i_task}",
+    "icon-theme": "${i_theme}",
+    "spacing": 0,
+    "tooltip-format": "{title}",
+    "on-click": "activate",
+    "on-click-middle": "close",
+    "ignore-list": [
+      "Alacritty",
+      "kitty-dropterm",
+      "kitty-btop"
+    ],
+    "app_ids-mapping": {
+      "firefoxdeveloperedition": "firefox-developer-edition",
+      "jetbrains-datagrip": "DataGrip"
+    }
+  },
 ```
 
 注意需要正确设置这两个应用的`title`，见[dropterm](#hyprland-drop-down-terminal), [dropbtop](#设置下拉式btop窗口，方便随时查看)
@@ -1398,15 +1398,13 @@ yay -S curl sptlrx-bin
       "rotate": "${r_deg}",
       "format-paused": "{status_icon} <i>{dynamic}</i>",
       "player-icons": {
-        "default": "",
+        "default": "▶",
         "mpv": "🎵"
       },
       "status-icons": {
-        "paused": "▶"
+        "paused": ""
       },
-      "ignored-players": [
-        "firefox"
-      ],
+      // "ignored-players": ["firefox"]
       "max-length": 50,
       "interval": 1,
       "dynamic-order": [
@@ -1447,7 +1445,7 @@ Y|Y|${HOME}/.config/kitty|theme.conf|kitty
 N|Y|${HOME}/.config/kitty|kitty.conf|kitty
 Y|Y|${HOME}/.config/waybar|config.jsonc style.css theme.css|waybar
 N|Y|${HOME}/.config/waybar|config.ctl|waybar
-N|Y|${HOME}/.config/waybar/modules|theme.jsonc wallchange.jsonc hardware.jsonc lx_lyrics.jsonc taskbar.jsonc mpris.jsonc|waybar
+N|Y|${HOME}/.config/waybar/modules|theme.jsonc wallchange.jsonc hardware.jsonc lyrics.jsonc taskbar.jsonc mpris.jsonc|waybar
 ```
 
 ### SDDM theme
