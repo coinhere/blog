@@ -11,7 +11,7 @@ tags:
 
 前几天看了几个Hyprland的视频，美观程度和流畅感简直甩了KDE两条街，当时就想投奔Hyprland，只是考虑到自己从头配置加美化要花不少时间，加上不能保证Hyprland就不会出各种各样的毛病，所以一直没有转Hyprland。
 
-这几天拆机空出了一块硬盘，又淘了个硬盘和，正好组成一个移动硬盘，加上GitHub上有许多美观的Hyprland的配置，直接免去了配置加美化的一环，正好试一试平铺式窗口管理的感觉如何。
+这几天拆机空出了一块硬盘，又淘了个硬盘盒，正好组成一个移动硬盘，加上GitHub上有许多美观的Hyprland的配置，直接免去了配置加美化的一环，正好试一试平铺式窗口管理的感觉如何。
 
 配置：
 
@@ -345,25 +345,18 @@ cd ~/HyDE/Scripts
 ./install.sh
 ```
 
+预装的软件包括：
+
+- Scripts/.extra/custom_flat.lst
+- Scripts/custom_apps.lst
+- Scripts/custom_hypr.lst
+- Scripts/system_ctl.lst
+- Scripts/themepatcher.lst
+
 可以添加其他想要安装的软件到`Scripts/custom_apps.lst`：
 
 ```bash
 ./install.sh custom_apps.lst
-```
-
-更新则运行：
-
-```bash
-cd ~/HyDE/Scripts
-git pull
-./install.sh -r
-```
-
-更新前修改`Scripts/restore_cfg.lst`来避免之前的配置被覆盖，我修改的是：
-
-```lst
-N|Y|${HOME}/.config/kitty|kitty.conf|kitty
-N|Y|${HOME}/.config/waybar|config.ctl|waybar
 ```
 
 ### JaKooLit
@@ -677,7 +670,7 @@ yay -S fcitx5-skin-fluentlight-git
 
 Release中下载MapleMono-NF-CN.zip，解压并放在`~/.local/share/fonts/`中。
 
-在kitty配置文件`~/.config/kitty/kitty.conf`将字体修改为`Maple Mono NF CN`
+在kitty配置文件`~/.config/kitty/kitty.conf`(HyDE中直接在`~/.config/kitty/userprefs.conf`里修改即可)将字体修改为`Maple Mono NF CN`
 
 #### Kitty点击链接时浏览器为`Brave`，无缩放
 
@@ -813,50 +806,6 @@ ChatGPT帮我写了一个脚本，用于切换HyDE主题时，同时切换neovim
 - 脚本使用`pynvim`给nvim实例发送命令，需要提前安装这个python包
 - 这里系统上nvim实例默认的socket路径皆在"/run/user/1000"，可以在nvim中运行`:echo v:servername`查看监听路径，你可能需要修改代码中的对应路径，以防脚本找不到所有nvim实例的接口
 
-#### cmp-cmdline
-
-neovim内命令及搜索自动补全，见[cmp-cmdline](https://github.com/hrsh7th/cmp-cmdline):
-
-```lua
-return {
-    {
-      "hrsh7th/cmp-cmdline",
-      config = function()
-        local cmp = require("cmp")
-        -- `/` cmdline setup.
-        cmp.setup.cmdline("/", {
-          mapping = cmp.mapping.preset.cmdline({
-            ["<C-f>"] = {
-              c = cmp.mapping.confirm({ select = false }),
-            },
-          }),
-          sources = {
-            { name = "buffer" },
-          },
-        })
-        -- `:` cmdline setup.
-        cmp.setup.cmdline(":", {
-          mapping = cmp.mapping.preset.cmdline({
-            ["<C-f>"] = {
-              c = cmp.mapping.confirm({ select = false }),
-            },
-          }),
-          sources = cmp.config.sources({
-            { name = "path" },
-          }, {
-            {
-              name = "cmdline",
-              option = {
-                ignore_cmds = { "Man", "!" },
-              },
-            },
-          }),
-        })
-      end,
-    },
-}
-```
-
 #### Leetcode neovim
 
 在neovim中刷Leetcode，见<https://github.com/kawre/leetcode.nvim>:
@@ -865,20 +814,13 @@ return {
 
 ```lua
 return {
-  -- 在LazyVim中的开始界面添加leetcode的条目
   {
-    "nvimdev/dashboard-nvim",
-    optional = true,
+    "folke/snacks.nvim",
     opts = function(_, opts)
-      local projects = { action = "Leet", desc = " Leet Code", icon = " ", key = "t" }
-      projects.desc = projects.desc .. string.rep(" ", 43 - #projects.desc)
-      projects.key_format = "  %s"
-
-      table.insert(opts.config.center, 9, projects)
+      local projects = { icon = " ", key = "t", desc = "Leet Code", action = ":Leet" }
+      table.insert(opts.dashboard.preset.keys, 9, projects)
     end,
   },
-
-  -- 添加leetcode的快捷键group
   {
     "folke/which-key.nvim",
     opts = {
@@ -889,7 +831,8 @@ return {
   },
   {
     "kawre/leetcode.nvim",
-    cmd = "Leet", -- added for lazy start
+    cmd = "Leet",
+    lazy = true,
 
     build = ":TSUpdate html",
     dependencies = {
@@ -911,7 +854,7 @@ return {
         translator = false, ---@type boolean
         translate_problems = false, ---@type boolean
       },
-      hooks = { -- avoid window duplication due to winfixbuf
+      hooks = {
         ---@type fun()[]
         ["enter"] = {
           function()
@@ -926,11 +869,14 @@ return {
           end,
         },
       },
+      plugins = {
+        non_standalone = true,
+      },
     },
     keys = {
-      { "<leader>l", false }, -- disable <leader>l for :Lazy
-      { "<leader>lz", "<cmd>Lazy<cr>", desc = "Lazy" }, -- use <leader>lz for :Lazy
-      { "<leader>lm", "<cmd>Leet<cr>", desc = "Leetcode menu" }, -- start Leetcode and show menu
+      { "<leader>l", false },
+      { "<leader>lz", "<cmd>Lazy<cr>", desc = "Lazy" },
+      { "<leader>lm", "<cmd>Leet<cr>", desc = "Leetcode menu" },
       { "<leader>lc", "<cmd>Leet console<cr>", desc = "Leetcode console" },
       { "<leader>li", "<cmd>Leet info<cr>", desc = "Leetcode info" },
       { "<leader>l<tabs>", "<cmd>Leet tabs<cr>", desc = "Leetcode tabs" },
@@ -1117,7 +1063,6 @@ Hyprland配置文件为`~/.config/hypr/hyprland.conf`，HyDE推荐修改`~/.conf
 input {
   touchpad {
     natural_scroll = true # 反转触摸板下滑方向
-    scroll_factor = 0.5 # 降低触摸板下滑速度
   }
 }
 
@@ -1155,7 +1100,7 @@ waybar配置文件为`~/.config/waybar/config.jsonc`，HyDE中该文件是根据
 我的设置为：
 
 ```conf
-1|31|top|( idle_inhibitor clock ) ( network group/hardware battery ) ( custom/cava custom/lyrics )|( hyprland/workspaces wlr/taskbar )|( mpris pulseaudio pulseaudio#microphone backlight ) ( tray ) ( custom/notifications custom/updates custom/cliphist custom/theme custom/wallchange custom/power )
+1|31|top|( idle_inhibitor clock ) ( network group/hardware battery ) ( custom/cava custom/lyrics )|( hyprland/workspaces wlr/taskbar )|( mpris pulseaudio pulseaudio#microphone backlight ) ( tray ) ( custom/updates custom/cliphist custom/theme custom/wallchange custom/power )
 ```
 
 {% asset_img waybar.png 分区示例 %}
@@ -1398,11 +1343,11 @@ yay -S curl sptlrx-bin
       "rotate": "${r_deg}",
       "format-paused": "{status_icon} <i>{dynamic}</i>",
       "player-icons": {
-        "default": "▶",
+        "default": "",
         "mpv": "🎵"
       },
       "status-icons": {
-        "paused": ""
+        "paused": "▶"
       },
       // "ignored-players": ["firefox"]
       "max-length": 50,
@@ -1441,8 +1386,6 @@ git pull
 
 ```lst
 N|Y|${HOME}/.config|fish/config.fish|fish
-Y|Y|${HOME}/.config/kitty|theme.conf|kitty
-N|Y|${HOME}/.config/kitty|kitty.conf|kitty
 Y|Y|${HOME}/.config/waybar|config.jsonc style.css theme.css|waybar
 N|Y|${HOME}/.config/waybar|config.ctl|waybar
 N|Y|${HOME}/.config/waybar/modules|theme.jsonc wallchange.jsonc hardware.jsonc lyrics.jsonc taskbar.jsonc mpris.jsonc|waybar
@@ -1571,6 +1514,8 @@ panscan=1.0
 osd-level=0
 ```
 
+之后自动启动便可写为：
+
 ```conf
 exec-once = mpvpaper -f -n 7200 -o "profile=mpvpaper" "*" /home/Videos/Wallpapers
 ```
@@ -1592,13 +1537,14 @@ mpvpaper提供`--auto-pause`和`--auto-stop`的参数，但在hyprland中没有�
   - 窗口全屏时（非最大化）暂停，退出全屏时取消暂停
   - 切换工作区后，根据工作区窗口数量和是否全屏选择禁音、暂停mpvpaper与否
 - [mpvpaper.sh](https://gist.github.com/coinhere/b97695322f9079a2178bb55120f2a795#file-mpvpaper-sh)，作用是：
+  - 如果以及有mpvpaper.sh进程则直接退出
   - 启动mpvpaper和auto_pause_mute_mpvpaper.sh
   - 退出时关闭mpvpaper和auto_pause_mute_mpvpaper.sh
   - 每隔一秒检测系统是否有其他音频输出，有则将mpvpaper音量降至零
 
 需要开启mpvpaper控制接口，并安装`socat`
 
-记得添加自动启动
+自动启动修改为：
 
 ```conf
 exec-once = $HOME/.config/hypr/scripts/mpvpaper.sh
@@ -1612,8 +1558,8 @@ exec-once = $HOME/.config/hypr/scripts/mpvpaper.sh
 
 ```conf
 # mpv-paper
-bind = $mainMod, F3, exec, $HOME/.config/hypr/scripts/mpvpaper.sh # 启动mpvpaper及相关进程
-bind = $mainMod, F4, exec, kill $(pgrep -f mpvpaper.sh) # 关闭mpvpaper及相关进程
+# 切换mpvpaper运行状态，关闭/启动mpvpaper及相关进程
+bind = $mainMod, F4, exec, pkill -x mpvpaper.sh >/dev/null || ~/.config/hypr/scripts/mpvpaper.sh
 bind = $mainMod, F5, exec, echo 'cycle mute' | socat - /tmp/mpv-socket # 静音/取消静音
 bind = $mainMod, F6, exec, echo 'playlist-prev' | socat - /tmp/mpv-socket # 播放上一个
 bind = $mainMod, F7, exec, echo 'cycle pause' | socat - /tmp/mpv-socket # 暂停/取消暂停
@@ -1645,7 +1591,7 @@ lock() {
   # avoid starting multiple hyprlock instances.
   if ! pidof hyprlock >/dev/null; then
     # quit mpvpaper script
-    kill -SIGTERM $(pgrep -f mpvpaper.sh)
+    pkill -x mpvpaper.sh
     # when unlock, restart mpvpaper
     hyprlock && lock_hook
   fi
@@ -1653,9 +1599,7 @@ lock() {
 
 lock_hook() {
   # run mpvpaper again
-  if ! pidof mpvpaper >/dev/null; then
-    ~/.config/hypr/scripts/mpvpaper.sh
-  fi
+  ~/.config/hypr/scripts/mpvpaper.sh
 }
 
 lock
