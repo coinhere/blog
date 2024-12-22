@@ -1592,6 +1592,8 @@ lock() {
   if ! pidof hyprlock >/dev/null; then
     # quit mpvpaper script
     pkill -x mpvpaper.sh
+    # pause music
+    playerctl pause
     # when unlock, restart mpvpaper
     hyprlock && lock_hook
   fi
@@ -1599,6 +1601,7 @@ lock() {
 
 lock_hook() {
   # run mpvpaper again
+  playerctl play
   ~/.config/hypr/scripts/mpvpaper.sh
 }
 
