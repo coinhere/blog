@@ -1285,9 +1285,11 @@ waybar_cava_bar="🌑🌒🌓🌔🌕🌖🌗🌘"
 
 ##### custom/lyrics
 
-需配合[洛雪音乐](https://github.com/lyswhut/lx-music-desktop)一起使用，目前支持落雪音乐和Spotify。
+需配合[洛雪音乐](https://github.com/lyswhut/lx-music-desktop)一起使用，目前支持落雪音乐、yesplaymusic和Spotify。
 
 开启洛雪音乐的[API](https://lxmusic.toside.cn/desktop/open-api)后，播放音乐时显示歌词在waybar上，需安装curl命令。
+
+需要安装python.
 
 还需要安装[sptlrx](https://github.com/raitonoberu/sptlrx)，用于获取Spotify歌词，需要配置Spotify的Cookie。
 
