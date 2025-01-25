@@ -1183,6 +1183,38 @@ waybar配置文件为`~/.config/waybar/config.jsonc`，HyDE中该文件是根据
 
 微调了几个waybar的module:
 
+##### custom/clock##custom
+
+简单更改了时间显示的格式：
+
+```clock#custom.jsonc
+    "clock": {
+          "format": "{:%I:%M %p}",
+          "rotate": "${r_deg}",
+          "format-alt": "{:%R 󰃭 %Y-%m-%d}",
+          "tooltip-format": "<span>{calendar}</span>",
+          "calendar": {
+                "mode": "month",
+            "mode-mon-col": 3,
+            "on-scroll": 1,
+            "on-click-right": "mode",
+            "format": {
+                    "months": "<span color='#ffead3'><b>{}</b></span>",
+              "weekdays": "<span color='#ffcc66'><b>{}</b></span>",
+              "today": "<span color='#ff6699'><b>{}</b></span>"
+                  }
+                },
+          "actions": {
+                "on-click-right": "mode",
+            "on-click-forward": "tz_up",
+            "on-click-backward": "tz_down",
+            "on-scroll-up": "shift_up",
+            "on-scroll-down": "shift_down"
+              }
+            },
+
+```
+
 ##### custom/theme
 
 给切换主题的命令加上了自动切换nvim主题的脚本，见[脚本](#HyDE切换主题时自动切换neovim的主题)
