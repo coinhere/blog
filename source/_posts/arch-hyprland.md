@@ -332,45 +332,9 @@ __GLX_VENDOR_LIBRARY_NAME=nvidia
 
 ## Hyprland安装
 
-推荐两个Hyprland的配置，一个是[prasanthrangan's HYDE](https://github.com/prasanthrangan/hyprdots)，简洁、干净、美观，包含多个不同风格的主题和基本的一些应用，适合于想要在一个美观的主题上搭建自己的Hyprland的用户，这也是GitHub上目前Star数最多的Hyprland配置。
+推荐Hyprland的配置，是[prasanthrangan's HYDE](https://github.com/prasanthrangan/hyprdots)，简洁、干净、美观，包含多个不同风格的主题和基本的一些应用，适合于想要在一个美观的主题上搭建自己的Hyprland的用户，这也是GitHub上目前Star数最多的Hyprland配置。
 
-### HYDE
-
-要安装HYDE，执行以下命令，安装过程中会安装许多包，为此你可能需要魔法：
-
-```bash
-pacman -Sy git
-git clone --depth 1 https://github.com/prasanthrangan/hyprdots ~/HyDE
-cd ~/HyDE/Scripts
-./install.sh
-```
-
-预装的软件包括：
-
-- Scripts/.extra/custom_flat.lst
-- Scripts/custom_apps.lst
-- Scripts/custom_hypr.lst
-- Scripts/system_ctl.lst
-- Scripts/themepatcher.lst
-
-可以添加其他想要安装的软件到`Scripts/custom_apps.lst`：
-
-```bash
-./install.sh custom_apps.lst
-```
-
-### JaKooLit
-
-另一个是[JaKooLit's Hyprland Dotfiles](https://github.com/JaKooLit/Hyprland-Dots)，不同之处是有更丰富的功能，例如下拉式终端、工作区概览，该配置为各种系统都提供率安装脚本，这里使用的是[archlinux 的安装脚本](https://github.com/JaKooLit/Arch-Hyprland)。
-
-安装请执行以下命令，安装过程中会安装许多包，为此你可能需要魔法：
-
-```bash
-git clone --depth=1 https://github.com/JaKooLit/Arch-Hyprland.git ~/Arch-Hyprland
-cd ~/Arch-Hyprland
-chmod +x install.sh
-./install.sh
-```
+原来的仓库已经不再维护，新的安装见：<https://github.com/Hyde-project/hyde>
 
 此后便可按照自己的喜好安装其它程序以及更改配置了。
 
@@ -714,6 +678,61 @@ nvim
 
 `:LazyExtra`查看额外配置。
 
+#### neovim切换目录到当前文件目录
+
+```keymap.lua
+-- cd to directory of current file
+vim.keymap.set("n", "<leader>cd", "<cmd>cd %:p:h<cr><cmd>pwd<cr>")
+```
+
+#### neovim切换Copilot补全
+
+`<leader>at`切换是否启用Copilot补全:
+
+```keymap.lua
+-- Auto toggle Copilot completion
+-- Reference: https://github.com/LazyVim/LazyVim/discussions/4232
+local copilot_exists = pcall(require, "copilot")
+if copilot_exists then
+  Snacks.toggle({
+    name = "Copilot Completion",
+    -- color = {
+    --   enabled = "azure",
+    --   disabled = "orange",
+    -- },
+    get = function()
+      return not require("copilot.client").is_disabled()
+    end,
+    set = function(state)
+      if state then
+        require("copilot.command").enable()
+      else
+        require("copilot.command").disable()
+      end
+    end,
+  }):map("<leader>at")
+end
+```
+
+#### blink cmdline补全以及使用Tab补全
+
+LazyVim默认取消cmdline补全，并且用`enter`补全
+
+这里使用`tab`进行补全，确保`enter`始终是换行和执行命令
+
+```blink.lua
+return {
+  {
+    "saghen/blink.cmp",
+    event = { "CmdlineEnter", "InsertEnter" },
+    opts = function(_, opts)
+      opts.sources.cmdline = nil
+      opts.keymap.preset = "super-tab"
+    end,
+  },
+}
+```
+
 #### neovide
 
 安装[neovide](https://neovide.dev/)(一个Neovim的图形用户界面)以获得更好的视觉及输入体验：
@@ -725,7 +744,7 @@ sudo pacman -S neovide
 记得在`~/.config/hypr/keybindings.conf`中添加启动快捷键：
 
 ```conf
-bind = $mainMod, N, exec, neovide # launch terminal emulator
+bindd = $mainMod, N, $d start neovide, exec, neovide # launch terminal emulator
 ```
 
 neovide自动读取neovim的设置，因此neovide的设置也放在neovim中，如`~/.config/nvim/lua/config/options.lua`
@@ -833,17 +852,12 @@ return {
     "kawre/leetcode.nvim",
     cmd = "Leet",
     lazy = true,
-
-    build = ":TSUpdate html",
+    build = ":TSUpdate html", -- if you have `nvim-treesitter` installed
     dependencies = {
       "nvim-telescope/telescope.nvim",
-      "nvim-lua/plenary.nvim", -- required by telescope
+      -- "ibhagwan/fzf-lua",
+      "nvim-lua/plenary.nvim",
       "MunifTanjim/nui.nvim",
-
-      -- optional
-      "nvim-treesitter/nvim-treesitter",
-      "rcarriga/nvim-notify",
-      "nvim-tree/nvim-web-devicons",
     },
     opts = {
       ---@type lc.lang
@@ -854,32 +868,30 @@ return {
         translator = false, ---@type boolean
         translate_problems = false, ---@type boolean
       },
-      hooks = {
-        ---@type fun()[]
-        ["enter"] = {
-          function()
-            vim.wo.winfixbuf = false
-          end,
-        },
 
-        ---@type fun(question: lc.ui.Question)[]
-        ["question_enter"] = {
-          function()
-            vim.wo.winfixbuf = false
-          end,
-        },
-      },
-      plugins = {
-        non_standalone = true,
-      },
-    },
+      -- hooks = {
+      --   ---@type fun()[]
+      --   ["enter"] = {
+      --     function()
+      --       vim.wo.winfixbuf = false
+      --     end,
+      --   },
+      --
+      --   ---@type fun(question: lc.ui.Question)[]
+      --   ["question_enter"] = {
+      --     function()
+      --       vim.wo.winfixbuf = false
+      --     end,
+      --   },
+      -- },
+    }, -- configuration goes here
     keys = {
       { "<leader>l", false },
       { "<leader>lz", "<cmd>Lazy<cr>", desc = "Lazy" },
       { "<leader>lm", "<cmd>Leet<cr>", desc = "Leetcode menu" },
       { "<leader>lc", "<cmd>Leet console<cr>", desc = "Leetcode console" },
       { "<leader>li", "<cmd>Leet info<cr>", desc = "Leetcode info" },
-      { "<leader>l<tabs>", "<cmd>Leet tabs<cr>", desc = "Leetcode tabs" },
+      { "<leader>l<tab>", "<cmd>Leet tabs<cr>", desc = "Leetcode tabs" },
       { "<leader>ly", "<cmd>Leet yank<cr>", desc = "Leetcode yank" },
       { "<leader>la", "<cmd>Leet lang<cr>", desc = "Leetcode lang" },
       { "<leader>l<cr>", "<cmd>Leet run<cr>", desc = "Leetcode run" },
@@ -890,7 +902,7 @@ return {
       { "<leader>lt", "<cmd>Leet last_submit<cr>", desc = "Leetcode last_submit" },
       { "<leader>ld", "<cmd>Leet desc<cr>", desc = "Leetcode desc" },
     },
-  }, -- configuration goes here
+  },
 }
 ```
 
@@ -929,12 +941,22 @@ Hyprlan默认的字体有些奇怪，这里修改字体设置。需要安装Wind
 
 {% asset_img font-settings.png 字体设置 %}
 
+#### github字体
+
+在github的上查看代码，一些nerd font的字符不会显示，github也不支持自定义字体，需要通过外置插件来修改。
+
+这里通过插件[Stylus](https://chromewebstore.google.com/detail/stylus/clngdbkpkpeebahjckkjfobafhncgmne)/[Stylus for Firefox](https://addons.mozilla.org/en-US/firefox/addon/styl-us/)来更改默认字体。
+
+安装后在Stylus里下载`Github Custom Fonts`，并将字体设置为喜欢的nerd font即可。
+这里是`Maple Mono NF CN`。
+
 #### 插件
 
 - onetab
 - 欧路词典
 - Vimium -- 类vim按键浏览网页，全键盘工作必备
 - Infinity New Tab
+- Stylus
 
 #### 取消视频自动静音
 
@@ -1003,27 +1025,9 @@ sudo pacman -S rocm-smi-lib
 
 catppuccin主题安装<https://github.com/catppuccin/btop>
 
-##### 设置下拉式btop窗口，方便随时查看
+设置下拉式btop窗口，方便随时查看:
 
-与[下拉式终端](#hyprland-drop-down-terminal)类似：
-在`~/.config/hypr/pyprland.toml`:
-
-```
-[scratchpads.dropbtop]
-animation = "fromBottom"
-command = "kitty --class kitty-btop --title kitty-btop btop"
-class = "kitty-btop"
-size = "75% 75%" # percent of full screen
-max_size = "1920px 100%"
-margin = "25%" # percent of half screen
-offset = "233%" # percent of half size, offset = (2*size + margin)/size
-```
-
-添加快捷键：
-
-```conf
-bind = ,F9,exec,pypr toggle dropbtop
-```
+见[Pyprland Scratchpads](#pyprland)
 
 ## Hyprland配置
 
@@ -1086,9 +1090,79 @@ group {
 ```conf
 windowrulev2 = opacity 0.90 0.90,class:^(google-chrome)$
 windowrulev2 = opacity 0.80 0.80,class:^(kitty)(.*)$|^(neovide)$ # 透明kitty的下拉窗口和neovide
+windowrulev2 = opacity 0.90 0.90,class:^(steamwebhelper)$
 windowrulev2 = noblur,class:^(kitty)(.*)$|^(neovide)$,focus:0 # 未锁定的kitty和neovide窗口取消模糊
+windowrulev2 = noblur,class:^(qalculate-gtk)$,focus:0 # 未锁定的qalculate-gtk窗口取消模糊
 windowrulev2 = bordercolor rgba(d20f39ff) rgba(fe640bff) 45deg, fullscreen:1 # 最大化窗口时改变边框颜色
+windowrulev2 = float,class:^([Ss]potify)$
 layerrule = order -1, mpvpaper # 避免mpvpaper桌面被覆盖
+```
+
+### pyprland
+
+[pyprland](https://hyprland-community.github.io/pyprland/)自带一些非常有用的插件，这里用到的只是`scratchpads`，可以用来设置想要的下拉式窗口：
+
+这里设置的下拉式窗口有：
+
+- 下拉式终端，类似KDE中的yakuake
+- btop
+- volume，随时调整音量
+- qalculate，计算器
+
+```pyprland.toml
+[pyprland]
+plugins = ["scratchpads"]
+
+[scratchpads.term]
+animation = "fromTop"
+command = "kitty --class kitty-dropterm --title kitty-dropterm"
+class = "kitty-dropterm"
+size = "75% 50%"                                                # percent of full screen
+max_size = "1920px 100%"
+margin = "7%"                                                   # percent of half screen
+offset = "210%"                                                 # percent of half size, offset = (2*size + margin)/size
+
+[scratchpads.dropbtop]
+animation = "fromBottom"
+command = "kitty --class kitty-btop --title kitty-btop btop"
+class = "kitty-btop"
+size = "75% 75%"                                             # percent of full screen
+max_size = "1920px 100%"
+margin = "25%"                                               # percent of half screen
+offset = "233%"                                              # percent of half size, offset = (2*size + margin)/size
+
+[scratchpads.volume]
+animation = "fromRight"
+command = "pavucontrol"
+class = "org.pulseaudio.pavucontrol"
+size = "20% 80%"
+unfocus = "hide"
+lazy = true
+margin = "5%"                        # percent of half screen
+offset = "225%"                      # percent of half size, offset = (2*size + margin)/size
+
+[scratchpads.qalculate]
+animation = "fromLeft"
+command = "qalculate-gtk"
+class = "qalculate-gtk"
+size = "40% 50%"          # percent of full screen
+max_size = "1920px 100%"
+lazy = true
+margin = "2%"             # percent of half screen
+offset = "205%"           # percent of half size, offset = (2*size + margin)/size
+
+```
+
+还需要设置自动启动和快捷键：
+
+```conf
+exec-once = /usr/bin/pypr
+
+# pyprland scratchpad
+bindd = ,F12, $d toggle term, exec,pypr toggle term
+bindd = ,F10, $d toggle qalculate, exec,pypr toggle qalculate
+bindd = ,F9, $d toggle btop, exec,pypr toggle dropbtop
+bindd = ,F1, $d toggle volume, exec,pypr toggle volume
 ```
 
 ### waybar任务栏设置
@@ -1100,7 +1174,7 @@ waybar配置文件为`~/.config/waybar/config.jsonc`，HyDE中该文件是根据
 我的设置为：
 
 ```conf
-1|31|top|( idle_inhibitor clock ) ( network group/hardware battery ) ( custom/cava custom/lyrics )|( hyprland/workspaces wlr/taskbar )|( mpris pulseaudio pulseaudio#microphone backlight ) ( tray ) ( custom/updates custom/cliphist custom/theme custom/wallchange custom/power )
+1|28|top|( idle_inhibitor clock ) ( network group/hardware battery custom/updates ) ( custom/cava custom/lyrics )|( hyprland/workspaces##custom wlr/taskbar##custom )|( mpris##custom pulseaudio pulseaudio#microphone backlight ) ( tray ) ( custom/cliphist custom/theme##custom custom/wallchange##custom custom/power )
 ```
 
 {% asset_img waybar.png 分区示例 %}
@@ -1201,7 +1275,7 @@ waybar配置文件为`~/.config/waybar/config.jsonc`，HyDE中该文件是根据
       "tooltip-format": "󰾆 {percentage}%\n {used:0.1f}GB/{total:0.1f}GB"
     },
     "custom/cpuinfo": {
-      "exec": "NO_EMOJI=1 cpuinfo.sh",
+      "exec": " cpuinfo.sh",
       "return-type": "json",
       "format": "{}",
       "rotate": "${r_deg}",
@@ -1210,7 +1284,7 @@ waybar配置文件为`~/.config/waybar/config.jsonc`，HyDE中该文件是根据
       "max-length": 1000
     },
     "custom/gpuinfo": {
-      "exec": "NO_EMOJI=1 gpuinfo.sh",
+      "exec": " gpuinfo.sh",
       "return-type": "json",
       "format": "{}",
       "rotate": "${r_deg}",
@@ -1220,7 +1294,7 @@ waybar配置文件为`~/.config/waybar/config.jsonc`，HyDE中该文件是根据
       "on-click": "gpuinfo.sh --toggle",
     },
     "custom/gpuinfo#nvidia": {
-      "exec": "NO_EMOJI=1 gpuinfo.sh --use nvidia ",
+      "exec": " gpuinfo.sh --use nvidia ",
       "return-type": "json",
       "format": "{}",
       "rotate": "${r_deg}",
@@ -1229,7 +1303,7 @@ waybar配置文件为`~/.config/waybar/config.jsonc`，HyDE中该文件是根据
       "max-length": 1000,
     },
     "custom/gpuinfo#amd": {
-      "exec": "NO_EMOJI=1 gpuinfo.sh --use amd ",
+      "exec": " gpuinfo.sh --use amd ",
       "return-type": "json",
       "format": "{}",
       "rotate": "${r_deg}",
@@ -1238,7 +1312,7 @@ waybar配置文件为`~/.config/waybar/config.jsonc`，HyDE中该文件是根据
       "max-length": 1000,
     },
     "custom/gpuinfo#intel": {
-      "exec": "NO_EMOJI=1 gpuinfo.sh --use intel ",
+      "exec": " gpuinfo.sh --use intel ",
       "return-type": "json",
       "format": "{}",
       "rotate": "${r_deg}",
@@ -1260,11 +1334,25 @@ sudo pacman -S cava
 
 更改waybar上cava的外观:
 
-将下列代码添加至`~/.config/hyde/hyde.conf`中，注释掉希望启用的那一行
+将下列代码添加至`~/.config/hyde/config.toml`中
 
 需要在`~/.config/waybar/config.ctl`中启用`custom/cava`
 
 ```conf
+[cava.waybar]
+# 'cava.sh waybar' configuration
+max_instances = 1 # Maximum number of cava instances // fix and workaround when waybar won't kill 'cava ' process
+# bar = "▁▂▃▄▅▆▇█"
+bar = "🌑🌒🌓🌔🌕🌖🌗🌘"
+width = 8
+range = 7
+# standby = "🎶"
+standby = "🌑🌒🌓🌔🌕🌖🌗🌘"
+```
+
+类型包括：
+
+```
 # waybar_cava_bar="▁▂▃▄▅▆▇█"
 # waybar_cava_bar="▏▎▍▌▋▊▉█"
 # waybar_cava_bar="░▒▓█"
@@ -1311,22 +1399,34 @@ yay -S curl sptlrx-bin
 
 ```jsonc
   "wlr/taskbar": {
+    "all-outputs": true,
+    "markup": true,
     "format": "{icon}",
     "rotate": "${r_deg}",
     "icon-size": "${i_task}",
     "icon-theme": "${i_theme}",
     "spacing": 0,
-    "tooltip-format": "{title}",
+    "tooltip-format": "{title}{app_id}",
     "on-click": "activate",
+    "on-click-right": "maximize",
     "on-click-middle": "close",
     "ignore-list": [
-      "Alacritty",
       "kitty-dropterm",
-      "kitty-btop"
+      "kitty-btop",
+      "org.pulseaudio.pavucontrol",
+      "qalculate-gtk"
     ],
     "app_ids-mapping": {
       "firefoxdeveloperedition": "firefox-developer-edition",
-      "jetbrains-datagrip": "DataGrip"
+      "firefoxnightly": "firefox-nightly",
+      "Spotify Free": "Spotify"
+    },
+    "rewrite": {
+      "Firefox Web Browser": "Firefox",
+      "Foot Server": "Terminal",
+      "Spotify Free": "Spotify",
+      "org.kde.dolphin": "dolphin",
+      "libreoffice-writer": "writer"
     }
   },
 ```
@@ -1346,12 +1446,17 @@ yay -S curl sptlrx-bin
       "format-paused": "{status_icon} <i>{dynamic}</i>",
       "player-icons": {
         "default": "",
-        "mpv": "🎵"
+        "mpv": " ",
+        "spotify": " ",
+        "chromium": "󰎇"
       },
       "status-icons": {
         "paused": "▶"
       },
-      // "ignored-players": ["firefox"]
+      "ignored-players": [
+        "firefox",
+        "chrome"
+      ],
       "max-length": 50,
       "interval": 1,
       "dynamic-order": [
@@ -1372,27 +1477,6 @@ yay -S curl sptlrx-bin
     },
 ```
 
-### HyDE更新覆盖设置
-
-HyDE的更新命令是：
-
-```bash
-cd ~/HyDE/Scripts/
-git pull
-./install -r
-```
-
-更新时，会备份和覆盖配置，可以在`~/HyDE/Scripts/restore_cfg.lst`中修改，我修改的是：
-
-第一个字符为是否覆盖，第二个字符为是否备份。
-
-```lst
-N|Y|${HOME}/.config|fish/config.fish|fish
-Y|Y|${HOME}/.config/waybar|config.jsonc style.css theme.css|waybar
-N|Y|${HOME}/.config/waybar|config.ctl|waybar
-N|Y|${HOME}/.config/waybar/modules|theme.jsonc wallchange.jsonc hardware.jsonc lyrics.jsonc taskbar.jsonc mpris.jsonc|waybar
-```
-
 ### SDDM theme
 
 #### SDDM主题字体过小
@@ -1406,64 +1490,6 @@ GeneralFontSize="18"
 #### 修改SDDM背景图片
 
 在`/usr/share/sddm/themes/Candy/backgrounds/`里添加自己想要的背景，再在`/usr/share/sddm/themes/Candy/theme.conf`里修改。
-
-### hyprland drop-down terminal
-
-使用[pyprland](https://hyprland-community.github.io/pyprland/)的内置插件[scratchpads](https://hyprland-community.github.io/pyprland/scratchpads.html)
-我的配置如下`~/.config/hypr/pyprland.toml`：
-
-```toml
-[pyprland]
-plugins = ["scratchpads"]
-
-[scratchpads.term]
-animation = "fromTop"
-command = "kitty --class kitty-dropterm --title kitty-dropterm"
-class = "kitty-dropterm"
-size = "75% 50%" # percent of full screen
-max_size = "1920px 100%"
-margin = "10%" # percent of half screen
-offset = "214%" # percent of half size, offset = (2*size + margin)/size
-```
-
-还需要设置自动启动和快捷键：
-
-```conf
-exec-once = /usr/bin/pypr
-bind = ,F12,exec,pypr toggle term
-```
-
-### workspaces preview
-
-类似KDE，显示所有的工作区，并可删除、拖动工作区中的窗口。
-
-HyDE没有window preview的功能，而JaKooLit有，因此我从[JaKooLit's Hyprland Dotfiles](https://github.com/JaKooLit/Hyprland-Dots)的设置中将workspaces preview的代码搬了过来，这两个Hyprland配置均使用`GPL v3.0`协议。
-
-该功能由[AGS](https://github.com/Aylur/ags)实现的，因此先安装AGS:
-
-```bash
-sudo pacman -S ags
-```
-
-之后将JaKooLit的AGS设置复制到`~/.config/ags/`中，其中有一个引用的css文件`colors-waybar.css`同样需要转移，并修改预览的背景图。
-
-```css
-...
-@import './colors-waybar.css';
-...
-.overview-tasks-workspace {
-...
-  background-image: url('/home/coinhere/Pictures/myWallpapers/haibara-ai.jpg');
-...
-}
-...
-```
-
-添加快捷键：
-
-```conf
-bind = $mainMod, Tab, exec, pkill rofi || true && ags -t 'overview' # ags workspace overview
-```
 
 ### 动态壁纸
 
@@ -1561,26 +1587,153 @@ exec-once = $HOME/.config/hypr/scripts/mpvpaper.sh
 ```conf
 # mpv-paper
 # 切换mpvpaper运行状态，关闭/启动mpvpaper及相关进程
-bind = $mainMod, F4, exec, pkill -x mpvpaper.sh >/dev/null || ~/.config/hypr/scripts/mpvpaper.sh
-bind = $mainMod, F5, exec, echo 'cycle mute' | socat - /tmp/mpv-socket # 静音/取消静音
-bind = $mainMod, F6, exec, echo 'playlist-prev' | socat - /tmp/mpv-socket # 播放上一个
-bind = $mainMod, F7, exec, echo 'cycle pause' | socat - /tmp/mpv-socket # 暂停/取消暂停
-bind = $mainMod, F8, exec, echo 'playlist-next' | socat - /tmp/mpv-socket # 播放下一个
+bindd = $mainMod, F4, $d toggle mpvpaper, exec, pkill -x mpvpaper.sh >/dev/null || ~/.config/hypr/scripts/mpvpaper.sh
+bindd = $mainMod, F5, $d toggle mpvpaper voice, exec, echo 'cycle mute' | socat - /tmp/mpv-socket # 静音/取消静音
+bindd = $mainMod, F6, $d mpvpaper play prev, exec, echo 'playlist-prev' | socat - /tmp/mpv-socket # 播放上一个
+bindd = $mainMod, F7, $d toggle mpvpaper play, exec, echo 'cycle pause' | socat - /tmp/mpv-socket # 暂停/取消暂停
+bindd = $mainMod, F8, $d mpvpaper play next, exec, echo 'playlist-next' | socat - /tmp/mpv-socket # 播放下一个
 ```
 
-### 锁屏、自动锁屏
+### hyprlock锁屏
 
-HyDE默认使用swaylock锁屏，这里选用hyprlock
-
-下载[hyprlock](https://wiki.hyprland.org/Hypr-Ecosystem/hyprlock/)
-
-```bash
-sudo pacman -S hypridle hyprlock
-```
+HyDE现在默认使用hyprlock锁屏
 
 #### hyprlock配置
 
-使用的[MrVivekRajan的hyprlock配置](https://github.com/MrVivekRajan/Hyprlock-Styles)
+设置见`~/.config/hypr/hyprlock.conf`，模板见`~/.config/hypr/hyprlock/`
+
+这里对`hyprlock/Anurati.conf`略作修改:
+
+```custom.conf
+#      ░▒▒▒░░░░░▓▓          ___________
+#    ░░▒▒▒░░░░░▓▓        //___________/
+#   ░░▒▒▒░░░░░▓▓     _   _ _    _ _____
+#   ░░▒▒░░░░░▓▓▓▓▓▓ | | | | |  | |  __/
+#    ░▒▒░░░░▓▓   ▓▓ | |_| | |_/ /| |___
+#     ░▒▒░░▓▓   ▓▓   \__  |____/ |____/
+#       ░▒▓▓   ▓▓  //____/
+
+$fontFamily = JetBrainsMono Nerd Font # We already have this font installed
+
+# Resolving custom fonts
+# Provide the font name and the download link separated by a pipe |
+# Run font.sh resolve $LAYOUT_PATH to install the font
+$resolve.font=Anurati|https://font.download/dl/font/anurati.zip
+$resolve.font=Inter|https://github.com/rsms/inter/releases/download/v4.1/Inter-4.1.zip
+
+background {
+    monitor =
+    color = $wallbash_pry1_rgba
+    path = $BACKGROUND_PATH
+    blur_size = 4
+    blur_passes = 3 # 0 disables blurring
+    noise = 0.0117
+    contrast = 1.3000 # Vibrant!!!
+    brightness = 0.8000
+    vibrancy = 0.2100
+    vibrancy_darkness = 0.0
+}
+
+# DAY
+label {
+    monitor =
+    text = cmd[update:1000] echo "$(date +"%A" | sed 's/./& /g' | tr '[:lower:]' '[:upper:]')" # Add a thin space between each character
+    color = $wallbash_1xa9_rgba
+    font_size = 110 # Wednesday is too long
+    font_family = Anurati
+    position = 0, 220
+    halign = center
+    valign = center
+}
+
+# DATE
+label {
+    monitor =
+    text = cmd[update:1000] echo "$(date +"%B %d")"
+    color = $wallbash_2xa9_rgba
+    font_size = 35
+    font_family = $font_family Thin
+    position = 0, 100
+    halign = center
+    valign = center
+}
+
+# TIME
+label {
+    monitor =
+   # text = cmd[update:1000] echo "$(date +"%-I:%M %p")"
+   text = cmd[update:1000] echo "$(date +"- %H:%M -")"
+    #text = $TIME
+    color = $wallbash_3xa9_rgba
+    font_size = 20 #!
+    font_family = $font_family
+    position = 0, 30
+    halign = center
+    valign = center
+}
+
+# INPUT FIELD
+input-field {
+    monitor =
+    size = 200, 50 #!
+    outline_thickness = 3
+    dots_size = 0.33 # Scale of input-field height, 0.2 - 0.8
+    dots_spacing = 0.15 # Scale of dots' absolute size, 0.0 - 1.0
+    dots_center = true
+    dots_rounding = -1 # -1 default circle, -2 follow input-field rounding
+    outer_color = rgba(0,0,0,0)
+    inner_color = rgba(255,255,255,0.1)
+    # outer_color = $wallbash_pry4_rgba
+    # inner_color = $wallbash_pry2_rgba
+    font_color = $wallbash_3xa9_rgba
+    fade_on_empty = false
+    # fade_timeout = 1000 # Milliseconds before fade_on_empty is triggered.
+    placeholder_text = <i>Input Password...</i> # Text rendered in the input box when it's empty.
+    hide_input = false
+    rounding = -1 # -1 means complete rounding (circle/oval)
+    check_color = $wallbash_pry4_rgba
+    fail_color = rgba(FF0000FF) # if authentication failed, changes outer_color and fail message color
+    fail_text = <i>$FAIL <b>($ATTEMPTS)</b></i> # can be set to empty
+    fail_transition = 300 # transition time in ms between normal outer_color and fail_color
+    capslock_color = -1
+    numlock_color = -1
+    bothlock_color = -1 # when both locks are active. -1 means don't change outer color (same for above)
+    invert_numlock = false # change color if numlock is off
+    swap_font_color = true # see below
+    position = 0, -150
+    halign = center
+    valign = center
+}
+
+# User tag
+label {
+    monitor =
+    text =    $USER
+    color = $wallbash_4xa9_rgba
+    outline_thickness = 2
+    dots_size = 0.2 # Scale of input-field height, 0.2 - 0.8
+    dots_spacing = 0.2 # Scale of dots' absolute size, 0.0 - 1.0
+    dots_center = true
+    font_size = 20
+    font_family = Inter Display Medium
+    position = 0, -80
+    halign = center
+    valign = center
+}
+
+# MPRIS text
+label {
+    monitor =
+    text = cmd[update:1000] $MPRIS_TEXT
+    # color = $wallbash_4xa9_rgba
+    color = $wallbash_txt1_rgba
+    font_size = 20
+    font_family = Inter Display Medium
+    position = 0, 30
+    halign = center
+    valign = bottom
+}
+```
 
 #### 自动退出、启动动态壁纸
 
@@ -1595,67 +1748,70 @@ lock() {
     # quit mpvpaper script
     pkill -x mpvpaper.sh
     # pause music
-    playerctl pause
+    # playerctl pause
     # when unlock, restart mpvpaper
-    hyprlock && lock_hook
+    lockscreen.sh && lock_hook
   fi
 }
 
 lock_hook() {
   # run mpvpaper again
-  playerctl play
+  # playerctl play
   ~/.config/hypr/scripts/mpvpaper.sh
 }
 
 lock
 ```
 
-更改键位：
-
-```conf
-bind = Ctrl+Alt, L, exec, $HOME/.config/hypr/scripts/lock.sh # launch lock screen
-```
-
-#### 设置空闲时自动锁屏
+#### hypridle
 
 hypridle是Hyprland的一个空闲daemon。空闲时自动计时，到达设定的触发器的时间便会执行触发器的命令。
 
-这里使用的hyprland官方文档中的配置: [hypridle](https://wiki.hyprland.org/Hypr-Ecosystem/hypridle/)
-创建`~/.config/hypr/hypridle.conf`并添加：
+对默认的配置修改了触发时间和锁屏命令
 
 ```conf
+#
+# $LOCKSCREEN = hyprlock # preferred LOCKSCREEN e.g swaylock
+$LOCKSCREEN = $HOME/.config/hypr/scripts/lock.sh
+
+
 general {
-    lock_cmd = $HOME/.config/hypr/scripts/lock.sh
-    before_sleep_cmd = loginctl lock-session    # lock before suspend.
-    after_sleep_cmd = hyprctl dispatch dpms on  # to avoid having to press a key twice to turn on the display.
+    lock_cmd = $LOCKSCREEN
+    unlock_cmd = #notify-send "unlock!"      # same as above, but unlock
+    before_sleep_cmd = $LOCKSCREEN    # command ran before sleep
+    after_sleep_cmd = # notify-send "Awake!"  # command ran after sleep
+    ignore_dbus_inhibit = 0
 }
 
+# Dims the display
 listener {
-    timeout = 150                                # 2.5min.
-    on-timeout = brightnessctl -s set 10         # set monitor backlight to minimum, avoid 0 on OLED monitor.
-    on-resume = brightnessctl -r                 # monitor backlight restore.
+    timeout = 150
+    on-timeout = { brightnessctl -s && brightnessctl s 1% ;}
+    on-resume = brightnessctl -r
 }
 
-# turn off keyboard backlight, comment out this section if you dont have a keyboard backlight.
-# listener { 
-#     timeout = 150                                          # 2.5min.
-#     on-timeout = brightnessctl -sd rgb:kbd_backlight set 0 # turn off keyboard backlight.
-#     on-resume = brightnessctl -rd rgb:kbd_backlight        # turn on keyboard backlight.
-# }
-
+# Lock it first before dpms off so that screen won't show for a moment after wake up.
 listener {
-    timeout = 300                                 # 5min
-    on-timeout = loginctl lock-session            # lock screen when timeout has passed
+    timeout = 300
+    on-timeout = $LOCKSCREEN
 }
 
+# DPMS off
 listener {
-    timeout = 330                                 # 5.5min
-    on-timeout = hyprctl dispatch dpms off        # screen off when timeout has passed
-    on-resume = hyprctl dispatch dpms on          # screen on when activity is detected after timeout has fired.
+    timeout = 360
+    on-timeout = Hyde run audio_idle ; hyprctl dispatch dpms off #do not turn off display while media is playing
+    on-resume = hyprctl dispatch dpms on
 }
 
+# Suspend
 listener {
-    timeout = 1800                                # 30min
-    on-timeout = systemctl suspend                # suspend pc
+    timeout = 900
+    on-timeout = Hyde run audio_idle ; systemctl suspend
 }
+
+# hyprlang noerror true
+# Source anything  from this path if you want to add your own listener
+# source command actually do not exist yet
+source = ~/.config/hypridle/*
+# hyprlang noerror false
 ```
