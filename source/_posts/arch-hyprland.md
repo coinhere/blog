@@ -1174,7 +1174,7 @@ waybar配置文件为`~/.config/waybar/config.jsonc`，HyDE中该文件是根据
 我的设置为：
 
 ```conf
-1|28|top|( idle_inhibitor clock ) ( network group/hardware battery custom/updates ) ( custom/cava custom/lyrics )|( hyprland/workspaces##custom wlr/taskbar##custom )|( mpris##custom pulseaudio pulseaudio#microphone backlight ) ( tray ) ( custom/cliphist custom/theme##custom custom/wallchange##custom custom/power )
+1|28|top|( idle_inhibitor clock##custom ) ( network group/hardware custom/updates battery ) ( custom/cava custom/lyrics )|( hyprland/workspaces##custom wlr/taskbar##custom )|( mpris##custom pulseaudio pulseaudio#microphone backlight ) ( tray ) ( custom/cliphist custom/theme##custom custom/wallchange##custom custom/power )
 ```
 
 {% asset_img waybar.png 分区示例 %}
@@ -1212,7 +1212,6 @@ waybar配置文件为`~/.config/waybar/config.jsonc`，HyDE中该文件是根据
             "on-scroll-down": "shift_down"
               }
             },
-
 ```
 
 ##### custom/theme
@@ -1422,6 +1421,30 @@ yay -S curl sptlrx-bin
 代码非常简单:
 
 见：<https://gist.github.com/coinhere/5c32ddf615574a5565ac83301c42ec64>
+
+##### hyprland/workspaces
+
+Toggle Special Workspaces时显示图标
+
+```jsonc
+    "hyprland/workspaces": {
+          "disable-scroll": true,
+          "rotate": "${r_deg}",
+          "all-outputs": true,
+          "active-only": false,
+          "show-special": true,
+          "special-visible-only": true,
+          "on-click": "activate",
+          "disable-scroll": false,
+          "on-scroll-up": "hyprctl dispatch workspace -1",
+          "on-scroll-down": "hyprctl dispatch workspace +1",
+          "persistent-workspaces": {},
+          "format": "{icon}",
+          "format-icons": {
+                "special": " ",
+          }
+            },
+```
 
 ##### wlr/taskbar
 
