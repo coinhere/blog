@@ -957,6 +957,7 @@ Hyprlan默认的字体有些奇怪，这里修改字体设置。需要安装Wind
 - Vimium -- 类vim按键浏览网页，全键盘工作必备
 - Infinity New Tab
 - Stylus
+- Tampermonkey -- 油猴脚本
 
 #### 取消视频自动静音
 
@@ -979,6 +980,7 @@ Hyprlan默认的字体有些奇怪，这里修改字体设置。需要安装Wind
 如`~/.config/electron-flags.conf`：
 
 ```conf
+--enable-features=WaylandWindowDecorations
 --ozone-platform-hint=auto
 --enable-wayland-ime
 ```
@@ -1093,6 +1095,8 @@ windowrulev2 = opacity 0.80 0.80,class:^(kitty)(.*)$|^(neovide)$ # 透明kitty�
 windowrulev2 = opacity 0.90 0.90,class:^(steamwebhelper)$
 windowrulev2 = noblur,class:^(kitty)(.*)$|^(neovide)$,focus:0 # 未锁定的kitty和neovide窗口取消模糊
 windowrulev2 = noblur,class:^(qalculate-gtk)$,focus:0 # 未锁定的qalculate-gtk窗口取消模糊
+windowrulev2 = float,class:^(xyz.chatboxapp.app)$
+windowrulev2 = noblur,class:^(xyz.chatboxapp.app)$,focus:0
 windowrulev2 = bordercolor rgba(d20f39ff) rgba(fe640bff) 45deg, fullscreen:1 # 最大化窗口时改变边框颜色
 windowrulev2 = float,class:^([Ss]potify)$
 layerrule = order -1, mpvpaper # 避免mpvpaper桌面被覆盖
@@ -1107,7 +1111,7 @@ layerrule = order -1, mpvpaper # 避免mpvpaper桌面被覆盖
 - 下拉式终端，类似KDE中的yakuake
 - btop
 - volume，随时调整音量
-- qalculate，计算器
+- Chatbox，AI agent
 
 ```pyprland.toml
 [pyprland]
@@ -1135,22 +1139,20 @@ offset = "233%"                                              # percent of half s
 animation = "fromRight"
 command = "pavucontrol"
 class = "org.pulseaudio.pavucontrol"
-size = "20% 80%"
+size = "20% 90%"
 unfocus = "hide"
 lazy = true
-margin = "5%"                        # percent of half screen
-offset = "225%"                      # percent of half size, offset = (2*size + margin)/size
+margin = "2%"                        # percent of half screen
+offset = "210%"                      # percent of half size, offset = (2*size + margin)/size
 
-[scratchpads.qalculate]
+[scratchpads.chatbox]
 animation = "fromLeft"
-command = "qalculate-gtk"
-class = "qalculate-gtk"
-size = "40% 50%"          # percent of full screen
-max_size = "1920px 100%"
+command = "Chatbox --ozone-platform-hint=wayland"
+class = "xyz.chatboxapp.app"
+size = "30% 90%"                                  # percent of full screen
 lazy = true
-margin = "2%"             # percent of half screen
-offset = "205%"           # percent of half size, offset = (2*size + margin)/size
-
+margin = "2%"                                     # percent of half screen
+offset = "207%"                                   # percent of half size, offset = (2*size + margin)/size
 ```
 
 还需要设置自动启动和快捷键：
@@ -1160,7 +1162,7 @@ exec-once = /usr/bin/pypr
 
 # pyprland scratchpad
 bindd = ,F12, $d toggle term, exec,pypr toggle term
-bindd = ,F10, $d toggle qalculate, exec,pypr toggle qalculate
+bindd = ,F10, $d toggle qalculate, exec,pypr toggle chatbox
 bindd = ,F9, $d toggle btop, exec,pypr toggle dropbtop
 bindd = ,F1, $d toggle volume, exec,pypr toggle volume
 ```
@@ -1545,6 +1547,29 @@ GeneralFontSize="18"
 #### 修改SDDM背景图片
 
 在`/usr/share/sddm/themes/Candy/backgrounds/`里添加自己想要的背景，再在`/usr/share/sddm/themes/Candy/theme.conf`里修改。
+
+#### 设置sddm触摸板轻触为点击
+
+ref: <https://gitlab.com/Matt.Jolly/sddm-eucalyptus-drop/>
+
+sddm默认运行在Xorg上，因此要修改X11的设置：
+
+`cat /etc/X11/xorg.conf.d/20-touchpad.conf`
+
+```
+Section "InputClass"
+        Identifier "libinput touchpad catchall"
+        MatchIsTouchpad "on"
+        MatchDevicePath "/dev/input/event*"
+        Driver "libinput"
+
+        Option "Tapping" "on"
+        Option "NaturalScrolling" "on"
+        Option "MiddleEmulation" "on"
+        Option "DisableWhileTyping" "on"
+EndSection
+
+```
 
 ### 动态壁纸
 
