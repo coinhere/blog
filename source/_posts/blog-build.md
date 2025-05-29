@@ -21,8 +21,9 @@ tags:
 如果选择部署网站到服务器，可以选择购买云服务器或者自建（需要公网IP，否则内网穿透）。
 
 也可以选择让将 Web 服务部署到别人的服务器上。
-鉴于 Github 国内访问不稳定，因此没有选择部署在 [Github Pages](https://pages.github.com/) 上。
-而是选择 [Zeabur](https://zeabur.com/) 一个国人团队开发的部署服务的平台。
+~~鉴于 Github 国内访问不稳定，因此没有选择部署在 [Github Pages](https://pages.github.com/) 上。
+~~而是选择 [Zeabur](https://zeabur.com/) 一个国人团队开发的部署服务的平台。~~
+Zeabur隔一段时间停止服务，因此重回Github Pages
 
 ## Quick Start
 
@@ -103,8 +104,10 @@ git push -u origin main
 
 Push 时，你可能需要输入密码，如需要免密，可自行配置 GitHub SSH Key，具体请查阅 <https://docs.github.com/en/authentication/connecting-to-github-with-ssh>。
 
-### 部署服务至 [Zeabur](https://zeabur.com/) 平台
+### ~~部署服务至 [Zeabur](https://zeabur.com/) 平台~~
 
-注册账号后，新建项目，选择服务器地区，添加服务选择 Github，选择自己的博客仓库即可（如果没有，点击配置 Github）。
+~~注册账号后，新建项目，选择服务器地区，添加服务选择 Github，选择自己的博客仓库即可（如果没有，点击配置 Github。~~
 
-部署完成后，在`网络-公开`中生成域名后访问即可。
+~部署完成后，在`网络-公开`中生成域名后访问即可。~
+
+### 部署至 Github Pages

@@ -82,11 +82,11 @@ pacstrap -c /mnt sof-firmware networkmanager ntfs-3g dosfstools # 板载声卡�
 pacstrap -c /mnt neovim sudo fish man-db man-pages texinfo
 ```
 
-生成并修改fstab文件，移除btrfs分区中两个字卷的subvolid参数，避免Timeshift恢复 Btrfs 快照时，可能出现由于子卷 ID 变更导致无法挂载目录而无法进入系统。
+生成并修改fstab文件，如果有subvolid参数需要移除btrfs分区中两个字卷的subvolid参数，避免Timeshift恢复 Btrfs 快照时，可能出现由于子卷 ID 变更导致无法挂载目录而无法进入系统。
 
 ```bash
 genfstab -U /mnt >> /mnt/etc/fstab # 生成fstab文件
-nvim /mnt/etc/fstab # 修改fstab文件
+vim /mnt/etc/fstab # 修改fstab文件
 ```
 
 ### 系统设置
@@ -393,6 +393,7 @@ esc = capslock
 # Swap rightalt and rightcontrol
 rightalt = rightcontrol
 rightctrol = rightalt
+rightshift = rightshift
 
 # When capslock_layer is pressed
 [capslock_layer]
@@ -583,6 +584,11 @@ fcitx5 -d # 启动fcitx5
 
 第一次使用时，会自动生成rime配置文件，在`~/.local/share/fcitx5/rime`中。
 
+#### 仅设置`RightShift`切换中英文输入法
+
+`RightShift`默认是`LeftShift`需要用`keyd`改键
+设置`Trigger Input Method`即可。
+
 #### 使用雾凇拼音词库
 
 ```bash
@@ -601,6 +607,17 @@ patch:
     menu/page_size: 7 #候选词个数
     schema_list: # 不使用小鹤双拼去掉下两行
       - schema: double_pinyin_flypy
+
+  # 禁止`shift`切换Rime输入法中英文，仅通过切换输入法切换中英文，因为Rime输入法的中英文切换是全局的，而输入法是可以局限在应用的（一个应用对应一个输入法，对应是否中英文）
+  ascii_composer/switch_key/Shift_L: noop
+  ascii_composer/switch_key/Shift_R: noop
+```
+
+见<https://github.com/iDvel/rime-ice/tree/main/others/%E5%8F%8C%E6%8B%BC%E8%A1%A5%E4%B8%81%E7%A4%BA%E4%BE%8B>
+
+```double_pinyin_flypy.custom.yaml
+patch:
+  translator/preedit_format: []
 ```
 
 之后重新启动fcitx5(右键图标点击`restart`)，`Ctrl+Space`即可输入中文。
@@ -1180,6 +1197,30 @@ waybar配置文件为`~/.config/waybar/config.jsonc`，HyDE中该文件是根据
 ```
 
 {% asset_img waybar.png 分区示例 %}
+
+#### waybar style.css设置
+
+```css
+#hardware {
+      color: @main-fg;
+      background: @main-bg;
+      opacity: 1;
+        margin: 3px 0px 3px 0px;
+        padding-left: 0px;
+        padding-right: 0px;
+}
+
+#clock,
+#pulseaudio {
+      color: @main-fg;
+      background: @main-bg;
+      opacity: 1;
+        margin: 3px 0px 3px 0px;
+        padding-left: 0px;
+        padding-right: 4px;
+}
+
+```
 
 #### waybar module修改
 

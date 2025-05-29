@@ -48,6 +48,8 @@ sudo pacman -S sunshine
 
 至此，笔记本屏幕已经可以同步显示台式机桌面画面了，但还不是我们想要的副屏。
 
+可以在moonlight的设定中，设置分辨率和帧率
+
 ## 设置虚拟显示器
 
 背景知识：
@@ -99,13 +101,86 @@ sudo grub-mkconfig -o /boot/grub/grub.cfg
 在Hyprland中，修改`~/.config/hypr/monitors.conf`，加入:
 
 ```conf
-monitor = DP-2,auto,auto,auto
+# 设置虚拟显示器分辨率为2880x1800，刷新率为120Hz，在主屏右侧，逆时针旋转90度
+monitor = DP-2,2880x1800@120.00,auto-right,auto,transform,1
 ```
 
-想要修改分辨率，刷新率，和位置见[Hyprland wiki](https://wiki.hyprland.org/Configuring/Monitors/)
+想要修改分辨率，刷新率，位置和旋转见[Hyprland wiki](https://wiki.hyprland.org/Configuring/Monitors/)
 
 最后，sunshine设置中，指定要串流的屏幕，在`Audio/Video`中的Display number
 
 通过查看命令行启动sunshine的输出，可以看到有关屏幕的number
 
+## 更多设置
+
+### 笔记本电脑开机自动开始串流
+
+#### 开机自动登录
+
+在Windows11中，首先将启动密码设置为空，确保电脑自动登录，或者设置人脸识别或指纹登录。
+
+#### 开启自动启动moonlight并串流
+
+按下`Win`+`R`，输入`shell:startup`，打开启动文件夹，创建moonlight的快捷方式到这个文件夹即可。
+
+在moonlight的快捷方式的属性，添加参数`stream <服务器名字> <应用名字>`
+
+我用的是`"C:\Program Files\Moonlight Game Streaming\Moonlight.exe" stream myArch Desktop`
+
+#### 设置按下电源键自动关机
+
+另外还要记得设置sunshine自启动，以及静音副屏。
+
+### 启动不带副屏的选项
+
+由于笔者的Arch Linux装在移动硬盘上，有时会在没有副屏的电脑上启动，因此需要系统启动时不启用虚拟显示器。
+
+通过内核参数添加的虚拟显示器，如果要不启用，除了重新更改内核参数并再生成GRUB设置文件外，目前笔者没有找到其他好的方法（sysctl对于这个参数无效），Hyprland 的禁用显示器命令稍微有点用。
+
+频繁修改内核参数并再生成GRUB设置文件，实在是太麻烦了。
+
+根据主板型号动态加载内核参数是一种显而易见的方法，然而笔者对于如何在内核启动前判断主板型号并修改对应的内核参数并没有什么头绪。
+
+在GRUB里增加一个不带副屏的启动条目，以后每次启动时手动选择。勉强算是一个办法。
+
+#### Hyprland根据主板型号自动启用/禁用副屏
+
 ```bash
+#!/bin/bash
+[ "$(cat /sys/class/dmi/id/board_name)" = "Your board name" ] && sunshine || hyprctl keyword monitor <Your Screen Name>,disable
+```
+
+#### 添加GRUB不同内核参数条目
+
+添加GRUB条目一般是修改`/etc/grub.d/40_custom`，然后再运行`sudo grub-mkconfig -o /boot/grub/grub.cfg`。
+
+这里不搞那么麻烦，复制`/etc/grub.d/10_linux`为`/etc/grub.d/11_linux_custom`，然后修改这个文件的内核参数，这会另外生成一个除内核参数外完全一样的启动条目。
+
+为了方便修改参数，先在`/etc/default/grub`删去增加虚拟显示器的内核参数，我们会在新文件中再添加启用虚拟显示器的内核参数。
+
+在`11_linux_custom`中，找到这段代码：
+
+```
+if [ "x${GRUB_DISTRIBUTOR}" = "x" ] ; then
+  OS=Linux
+else
+  OS="${GRUB_DISTRIBUTOR} Linux"
+  CLASS="--class $(echo ${GRUB_DISTRIBUTOR} | tr 'A-Z' 'a-z' | cut -d' ' -f1|LC_ALL=C sed 's,[^[:alnum:]_],_,g') ${CLASS}"
+fi
+```
+
+我们修改内核参数和系统名字——与原系统区别：
+
+```
+# Added by coinhere to add 2rd screen grub start entry.
+GRUB_CMDLINE_LINUX_DEFAULT="${GRUB_CMDLINE_LINUX_DEFAULT} drm.edid_firmware=DP-2:edid/EDID-fix.bin video=DP-2:e"
+
+if [ "x${GRUB_DISTRIBUTOR}" = "x" ] ; then
+  OS=Linux
+else
+  OS="${GRUB_DISTRIBUTOR} Linux (2rd Screen)"
+  CLASS="--class $(echo ${GRUB_DISTRIBUTOR} | tr 'A-Z' 'a-z' | cut -d' ' -f1|LC_ALL=C sed 's,[^[:alnum:]_],_,g') ${CLASS}"
+fi
+```
+
+最后再运行`sudo grub-mkconfig -o /boot/grub/grub.cfg`。
