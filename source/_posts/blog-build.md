@@ -1,10 +1,9 @@
 ---
-title: Hexo+GitHub+Zeabur搭建博客
+title: Hexo+GitHub搭建博客
 date: 2024-9-7 14:03:45
 tags: 
  - Hexo
  - Github
- - Zeabur
 ---
 
 搭建博客一般需要这些：
