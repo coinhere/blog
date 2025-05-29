@@ -1,5 +1,5 @@
 ### Blog
 
-Coin Here's blog, build in Hexo, deployed in [Zeabur](https://zeabur.com/).
+Coin Here's blog, build in Hexo
 
-Website: <https://coinhere.fra1.zeabur.app/>
+Website: <https://coinhere.github.io/>
