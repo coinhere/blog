@@ -743,8 +743,13 @@ return {
     "saghen/blink.cmp",
     event = { "CmdlineEnter", "InsertEnter" },
     opts = function(_, opts)
-      opts.sources.cmdline = nil
+      opts.cmdline.enabled = true
       opts.keymap.preset = "super-tab"
+
+      -- added due to bug in <https://github.com/Saghen/blink.cmp/issues/1247>
+      if vim.g.neovide then
+        opts.completion.accept.dot_repeat = false
+      end
     end,
   },
 }
