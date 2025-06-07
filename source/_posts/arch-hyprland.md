@@ -1117,8 +1117,6 @@ windowrulev2 = opacity 0.80 0.80,class:^(kitty)(.*)$|^(neovide)$ # 透明kitty�
 windowrulev2 = opacity 0.90 0.90,class:^(steamwebhelper)$
 windowrulev2 = noblur,class:^(kitty)(.*)$|^(neovide)$,focus:0 # 未锁定的kitty和neovide窗口取消模糊
 windowrulev2 = noblur,class:^(qalculate-gtk)$,focus:0 # 未锁定的qalculate-gtk窗口取消模糊
-windowrulev2 = float,class:^(xyz.chatboxapp.app)$
-windowrulev2 = noblur,class:^(xyz.chatboxapp.app)$,focus:0
 windowrulev2 = bordercolor rgba(d20f39ff) rgba(fe640bff) 45deg, fullscreen:1 # 最大化窗口时改变边框颜色
 windowrulev2 = float,class:^([Ss]potify)$
 layerrule = order -1, mpvpaper # 避免mpvpaper桌面被覆盖
@@ -1133,7 +1131,6 @@ layerrule = order -1, mpvpaper # 避免mpvpaper桌面被覆盖
 - 下拉式终端，类似KDE中的yakuake
 - btop
 - volume，随时调整音量
-- Chatbox，AI agent
 
 ```pyprland.toml
 [pyprland]
@@ -1167,14 +1164,14 @@ lazy = true
 margin = "2%"                        # percent of half screen
 offset = "210%"                      # percent of half size, offset = (2*size + margin)/size
 
-[scratchpads.chatbox]
+[scratchpads.qalculate]
 animation = "fromLeft"
-command = "Chatbox --ozone-platform-hint=wayland"
-class = "xyz.chatboxapp.app"
-size = "30% 90%"                                  # percent of full screen
+command = "qalculate-gtk"
+class = "qalculate-gtk"
+size = "40% 50%"          # percent of full screen
 lazy = true
-margin = "2%"                                     # percent of half screen
-offset = "207%"                                   # percent of half size, offset = (2*size + margin)/size
+margin = "2%"             # percent of half screen
+offset = "205%"           # percent of half size, offset = (2*size + margin)/size
 ```
 
 还需要设置自动启动和快捷键：
@@ -1184,9 +1181,9 @@ exec-once = /usr/bin/pypr
 
 # pyprland scratchpad
 bindd = ,F12, $d toggle term, exec,pypr toggle term
-bindd = ,F10, $d toggle qalculate, exec,pypr toggle chatbox
 bindd = ,F9, $d toggle btop, exec,pypr toggle dropbtop
 bindd = ,F1, $d toggle volume, exec,pypr toggle volume
+bindd = ,F2, $d toggle qalculate, exec,pypr toggle qalculate
 ```
 
 ### waybar任务栏设置
